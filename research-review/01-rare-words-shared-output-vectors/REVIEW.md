@@ -1,34 +1,35 @@
-# 01｜Rare words + dynamically clustered shared output vectors
+# 01｜动态聚类共享语言模型输出向量
 
-对应原文：[PAPER.md](../../01-rare-words-shared-output-vectors/PAPER.md)，[RESULTS.md](../../01-rare-words-shared-output-vectors/RESULTS.md)。
+原始材料：[PAPER.md](../../01-rare-words-shared-output-vectors/PAPER.md) · [RESULTS.md](../../01-rare-words-shared-output-vectors/RESULTS.md) · [深入研究](DEEP_NOVELTY_AUDIT.md)
 
-## 原作者的主张（从原文提取）
+## 研究问题与方法
 
-输出层每个词 w 的向量拆为**私有分量 + 组共享分量**。用当前输出向量做 k-means，约每 50 步重新划分；在重新分组时移动均值、抵消私有部分，使预测函数在分组瞬间不变。小模型 FineWeb 任务中，对已调参的 head-only Adam epsilon 基线，作者报告 6k 词表的 loss 从 4.9931 降至 4.9720（0.021）；称随机/按频率固定分组无收益。测试宽度 32–128、深度 1–4，训练 token 至多约 1.6M；缺少真实 LLM batch 和 125M+ 实验。
+稀有 token 的输出向量受到的正样本学习信号较少。方法将输出向量表示为 `R_w=A_w+C_{g(w)}`：每词私有向量 `A_w` 加所属簇共享向量 `C_{g(w)}`。训练期间按当前输出向量做 K-means 并重分簇，再调整私有分量以保持 `R_w` 不变。共享分量汇聚同组词的训练梯度，推理时可折叠回普通输出矩阵。
 
-## 最近邻与撞车判断
+原作者报告：词表 6,000 时，与优化过输出层 Adam epsilon 的基线相比，验证 loss **4.9931 → 4.9720**；random/frequency 固定分组的收益很小。此结果来自原仓库训练记录。
 
-1. **Botha & Blunsom (2014)**：词输出表示通过 morpheme 等共享组合构造，长尾词共享信号已知。**撞上基本动机与结构，而非同样的动态组法**。[ACL](https://proceedings.mlr.press/v32/botha14.html)
-2. **Syntactic Smoothing (Diehl Martinez et al., 2024)**：通过语法先验传播学习信号、改善稀有词。**撞上把相似低频词联合学习的原则；与自行发现的聚类不同**。[arXiv](https://arxiv.org/abs/2410.11462)
-3. **Soft Weight-Sharing (Ullrich et al., ICLR 2017)**：利用可学习的权重聚类/共享进行压缩。**“学出一组共享权重”不是首创；目标与实现不同**。[arXiv](https://arxiv.org/abs/1702.04008)
-4. **LightRNN、动态类别分配等**：原论文已讨论通过重新分配共享结构降低模型体积。需做实现层面的精确对照，不能写“首次动态聚类输出词向量”。
+## 研究贡献与已有文献
 
-## 创新性最窄的可辩护表述
+- [Botha & Blunsom, ICML 2014](https://proceedings.mlr.press/v32/botha14.html)：形态学构成的共享词向量，提供跨词学习的理论与实验先例。
+- [LightRNN, 2016](https://arxiv.org/abs/1610.09893)：训练中重分配共享词表示，关注紧凑结构。
+- [Soft Weight-Sharing, ICLR 2017](https://arxiv.org/abs/1702.04008)：动态权重簇和共享优化。
+- [GroupReduce, NeurIPS 2018](https://papers.neurips.cc/)：直接研究输出 softmax 矩阵的分组、迭代调整与组内低秩近似，目标是压缩。
+- [Syntactic Smoothing, EMNLP 2024](https://arxiv.org/abs/2410.11462)：以句法关系传递学习信号。
+- [LENS, ACL 2025](https://aclanthology.org/2025.acl-long.930/)：对预训练 LM 输出层 token 向量进行 K-means 聚类，构建簇级表示。
 
-不是“低频词共享参数”，而是：**训练中的输出向量驱动动态分组 + 组切换函数保持 + 输出词向量带私有残差 + 推理时折叠共享项，改善稀有词的优化**。这一完整组合在已核对近邻文献中尚未发现同构表达，但绝不是已证明全球首创。
+**值得研究的新组合**是 *输出向量的在线自组织分簇、函数保持式重分配、共享梯度优化以及零额外推理成本*。这些参考工作分别覆盖了相关组件，研究目标与完整训练过程各不相同。
 
-## 投稿判断
+## 关键技术问题
 
-**可以继续写为方法论文候选；当前不具备顶会主会的充分证据。** 主要风险：组合增量、新旧群组重分配带来的优化器状态/收敛混杂；小训练、截断 tokenizer 和低频词评估无法迁移。
+原论文的伪代码重分组后执行 `reset_adam_state(self.C)`，实际 `grid.py` 没有该调用，且每次 K-means 用固定随机种子初始化而非上次分组。对这一差异做 Adam 状态消融，能够揭示收益源于跨词共享、参数重设，还是二者的联合作用。
 
-## 最小决定性实验（按价值顺序）
+作者报告相同 token 预算下，batch 16/32/64/128 的 loss 收益约 **0.025/0.021/0.011/0.007**；这提示全局 batch、更新次数和簇更新频率值得进一步建模。
 
-1. **同配置先验分组对照**：morpheme / 词性 / 预训练静态语义邻域 vs 动态 k-means；等参数、等 LR 搜索。原研究已经有 random/frequency 对照，**但这不足以对抗最接近已有方法**。
-2. 分别只更新组 / 冻结动态重分配 / 仅重分组不共享 / 控制 optimizer state，分离函数保持和真正跨词梯度共享的因果贡献。
-3. 提高真实词表与 batch，在至少 125M、长日程测 val loss 与稀有词分桶；报告 3–5 seeds。
-4. 做**稀有词是否被错误拉向高频词**的负例与语义偏移测试。
-5. 排查聚类开销和真实训练吞吐，折叠前后逐 token 输出一致性单元测试。
+## 下一组实验
 
-## 拍板
+1. 保留、重置、迁移 Adam moments 的同配置对比，记录函数保持精度和重聚类后学习轨迹。
+2. 与静态语义、形态学、词性分组对比，分离“组的质量”和“重分组过程”。
+3. 增大有效 batch 和训练长度，分析不同频率 bucket 的收益曲线。
+4. 扩展到标准词表与较大模型，报告验证 loss、训练成本、低频 token 泛化。
 
-新意**部分存在**，不是明显的逐字重合论文；但最危险的是把早已有的“相似词共享/学习分组”包装成全新原则。优先级：**第二**。结论在真正的同模型 morpheme/词性对照之后才可能升级。
+**论文方向：**语言模型输出层的函数保持动态重参数化与长尾词优化；创新的重点在训练机制及其可解释的优化效果。
