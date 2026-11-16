@@ -1,0 +1,55 @@
+name: Research 01 — matched Coupled Adam challenge
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-coupled-adam-challenge.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/coupled_adam_challenge.py"
+      - "research-review/01-rare-words-shared-output-vectors/COUPLED_ADAM_CHALLENGE_PROTOCOL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  coupled_optimizer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [0, 1, 2]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare matched GPT-2-token FineWeb data and study runtime
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Evaluate 18 matched optimizer settings per model seed
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/coupled_adam_challenge.py --seed ${{ matrix.seed }} | tee coupled_seed${{ matrix.seed }}.log
+      - name: Confirm raw result count and numerical finiteness
+        run: |
+          python - <<'PY'
+          import json,math
+          from pathlib import Path
+          paths=list(Path("research-lab/01-rare-words-shared-output-vectors").glob("coupled_challenge_seed*.jsonl"))
+          assert len(paths)==1
+          rows=[json.loads(x) for x in paths[0].read_text().splitlines()]
+          assert len(rows)==18 and len({x["tag"] for x in rows})==18
+          assert all(math.isfinite(x["scores"]["val"]) for x in rows)
+          assert all(x["args"]["steps"]==400 and x["args"]["V"]==6000 for x in rows)
+          PY
+      - name: Archive all raw results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coupled-adam-seed${{ matrix.seed }}
+          path: |
+            coupled_seed${{ matrix.seed }}.log
+            research-lab/01-rare-words-shared-output-vectors/coupled_challenge_seed*.jsonl
+          if-no-files-found: ignore
