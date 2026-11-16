@@ -51,7 +51,7 @@
 
 ## 独立审查的核心外部文献
 
-- [Botha & Blunsom 2014，形态共享词表示（原文讨论的先例）](https://aclanthology.org/P14-1131/)
+- [Botha & Blunsom, ICML 2014：形态共享词表示](https://proceedings.mlr.press/v32/botha14.html)
 - [Syntactic Smoothing 2024](https://arxiv.org/abs/2410.11462)
 - [Soft Weight-Sharing, ICLR 2017](https://arxiv.org/abs/1702.04008)
 - [Baydin et al., ICLR 2018：Hypergradient](https://mlanthology.org/iclr/2018/baydin2018iclr-online/)
