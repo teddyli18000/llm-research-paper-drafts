@@ -3,6 +3,17 @@
 Owner: independent follow-up on the original `01-rare-words-shared-output-vectors` draft.
 The original paper and original code remain unchanged.
 
+## Current research progress (2026-11-16)
+
+See [WORKLOG.md](WORKLOG.md) for a complete run ID/evidence index and [research review](../../research-review/01-rare-words-shared-output-vectors/).
+
+- Confirmed the original dynamic KMeans group-sharing effect on **three model seeds**, **four separate FineWeb train slices**, width32/V6000, and independently width128/V16000. The gain is real in these controlled settings.
+- Learned group membership is key: random group refresh and function-preserving recenter alone have no benefit. Retaining a private-word optimizer history matters; resetting cluster Adam history itself does not negate the effect.
+- A stronger **fixed semantic grouping** extracted from the training data beats the naive online KMeans method on the small runs. Late online adaptation of that semantic prior can add an improvement. With external GPT-2 pretrained token vectors, static semantic groups are stronger still.
+- Derived an exact class-gradient coupling identity for `R=U+AC` and confirmed a direct no-extra-parameter dynamic gradient-kernel mechanism, plus a centered normalized group projector (see [PROJECTOR_LEMMA.md](../../research-review/01-rare-words-shared-output-vectors/PROJECTOR_LEMMA.md)).
+- Current questions: long-horizon persistence, which target-frequency buckets benefit, sensitivity to different training slices, and whether bounded-geometry group-gradient mixing scales.
+- Ongoing Actions results are recorded by run ID in WORKLOG; the original paper/code remain unchanged.
+
 ## Research hypothesis
 
 For vocabulary output matrix `R=U+AC` with a one-hot word–cluster assignment matrix `A`, shared cluster vectors are a **learned, changing gradient-coupling operator**. For SGD with fixed assignment,
@@ -31,4 +42,4 @@ The public GPT-2 FineWeb10B shards use the same data format as the original sour
 - [LENS, ACL 2025](https://aclanthology.org/2025.acl-long.930/): cluster pretrained LM head output vectors.
 - [Why Adaptive Optimizers Underestimate Rare Tokens, Sep 2026](https://arxiv.org/abs/2609.37535): predicts rare output-row Adam bias; identifies SGD/AMSGrad differences. This is especially relevant to the original author's optimizer interpretation.
 
-Next decision: determine if rare-word gain persists after moment reset and with fixed semantic clusters before investing in any larger language-model run.
+Next decision: finish 1600-step and target-frequency tests, then decide on full-vocabulary and stronger modern optimizer benchmarks.
