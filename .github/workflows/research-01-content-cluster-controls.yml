@@ -26,6 +26,7 @@ jobs:
           python research-lab/01-rare-words-shared-output-vectors/build_runner.py
       - name: Run random refresh, same membership recentering, and warmstart clustering
         run: |
+          set -euo pipefail
           python -u research-lab/01-rare-words-shared-output-vectors/cluster_controls.py | tee cluster_controls.log
       - name: Upload result matrix
         if: always()
