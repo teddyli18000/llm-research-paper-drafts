@@ -1,0 +1,78 @@
+name: Research 01 — adaptive-optimizer challenge
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/research-01-optimizer-competitors.yml"
+permissions:
+  contents: read
+jobs:
+  optimizer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU research dependencies
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare data and instrumented original model
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Expose AMSGrad as a controlled optimizer variant
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("research-lab/01-rare-words-shared-output-vectors/grid_study_runtime.py")
+          s=p.read_text()
+          old='p.add_argument("--seed", type=int, default=0)'
+          assert s.count(old)==1
+          s=s.replace(old, 'p.add_argument("--amsgrad", type=int, choices=[0,1], default=0); '+old)
+          old='torch.optim.Adam(groups, betas=(a.b1, a.b2), eps=a.eps)'
+          assert s.count(old)==1
+          s=s.replace(old, 'torch.optim.Adam(groups, betas=(a.b1, a.b2), eps=a.eps, amsgrad=bool(a.amsgrad))')
+          p.write_text(s)
+          PY
+      - name: Three-seed Adam versus AMSGrad, with and without online output sharing
+        run: |
+          python -u - <<'PY' | tee optimizer_probe.log
+          import subprocess,sys,json
+          from pathlib import Path
+          from statistics import mean
+          lab=Path("research-lab/01-rare-words-shared-output-vectors")
+          records=lab/"optimizer_probe.jsonl"
+          records.unlink(missing_ok=True)
+          for seed in (0,1,2):
+              for name,amsgrad,clus in (
+                  ("adam",0,0),("adam_cluster",0,64),
+                  ("amsgrad",1,0),("amsgrad_cluster",1,64)):
+                  cmd=[sys.executable,str(lab/"grid_study_runtime.py"),"--dev","cpu",
+                       "--V","6000","--steps","400","--batch","32","--heps","1e-5",
+                       "--seed",str(seed),"--moment","keep","--amsgrad",str(amsgrad),
+                       "--tag",f"opt_{name}_s{seed}","--out",records.name,"--threads","2",
+                       "--clus",str(clus)]
+                  subprocess.run(cmd,check=True)
+          rows=[json.loads(x) for x in records.read_text().splitlines()]
+          assert len(rows)==12
+          for seed in (0,1,2):
+              ls={r["tag"].removeprefix("opt_").split("_s")[0]:r["scores"]["val"] for r in rows if r["args"]["seed"]==seed}
+              print(f"seed {seed} metrics {ls}")
+              print(f"  Adam gain: {ls['adam']-ls['adam_cluster']:.6f}")
+              print(f"  AMSGrad gain: {ls['amsgrad']-ls['amsgrad_cluster']:.6f}")
+              print(f"  AMSGrad baseline vs clustered Adam: {ls['amsgrad']-ls['adam_cluster']:.6f}")
+          for arm in ("adam","adam_cluster","amsgrad","amsgrad_cluster"):
+              print("arm",arm,"mean_val",mean(r["scores"]["val"] for r in rows if r["tag"].removeprefix("opt_").split("_s")[0]==arm))
+          PY
+      - name: Archive all optimizer results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rare-01-optimizer-competition
+          path: |
+            optimizer_probe.log
+            research-lab/01-rare-words-shared-output-vectors/optimizer_probe.jsonl
+          if-no-files-found: ignore
