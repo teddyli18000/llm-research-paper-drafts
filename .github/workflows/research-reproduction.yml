@@ -19,10 +19,33 @@ jobs:
         run: |
           python -m pip install numpy
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-      - name: 04 pointer heads
-        run: sh 04-attention-chain-following-heads/reproduce.sh 2>&1 | tee research-04.log
-      - name: 05 pointer doubling
-        run: sh 05-attention-pointer-doubling/reproduce.sh 2>&1 | tee research-05.log
+      - name: 04 pointer heads on Linux CPU
+        run: |
+          sed -i 's/default="mps"/default="cpu"/' 04-attention-chain-following-heads/rbg.py
+          sh 04-attention-chain-following-heads/reproduce.sh 2>&1 | tee research-04.log
+      - name: 05 pointer doubling on Linux CPU
+        run: |
+          sed -i 's/default="mps"/default="cpu"/' 05-attention-pointer-doubling/pdg.py
+          sh 05-attention-pointer-doubling/reproduce.sh 2>&1 | tee research-05.log
+      - name: Verify headline experiments ran and achieved expected behavior
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          specs = {
+              "research-04.log": {"R-h2-F": (0, 0.6), "R-h2-ID": (0.85, 1.01), "R-h4L4-F": (0, 0.6), "R-h4L4-PTRnb": (0.85, 1.01)},
+              "research-05.log": {"RP-h7L3-F": (0, 0.6), "RP-h7L3-BLN": (0.85, 1.01), "RP-h15L4-PNB": (0, 0.6), "RP-h15L4-BLN": (0.85, 1.01)},
+          }
+          for file, expectations in specs.items():
+              s = Path(file).read_text()
+              assert "FAILED" not in s, f"{file}: child process failed"
+              for tag, (low, high) in expectations.items():
+                  match = re.search(r"^" + re.escape(tag) + r"\s+acc\s+([0-9.]+)", s, re.M)
+                  assert match, f"{tag}: missing result"
+                  value = float(match.group(1))
+                  assert low <= value < high, f"{tag}: acc={value} outside [{low}, {high})"
+          print("04 and 05 reproductions: executed and matched headline direction")
+          PY
       - name: Archive run output
         if: always()
         uses: actions/upload-artifact@v4
