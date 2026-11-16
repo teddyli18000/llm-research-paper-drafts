@@ -1,0 +1,40 @@
+name: Research 01 — actual rare-token loss decomposition
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research-lab/01-rare-words-shared-output-vectors/frequency_bin_study.py"
+      - ".github/workflows/research-01-rare-bins.yml"
+permissions:
+  contents: read
+jobs:
+  bins:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare data and count-matched context group comparator
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/context_groups_16000.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Rerun three methods and report losses per target-frequency bucket
+        run: |
+          set -euo pipefail
+          python -u research-lab/01-rare-words-shared-output-vectors/frequency_bin_study.py | tee frequency_bins.log
+      - name: Save machine-readable full bucket loss
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research01-frequency-buckets
+          path: |
+            frequency_bins.log
+            research-lab/01-rare-words-shared-output-vectors/frequency_bins_16k.jsonl
+          if-no-files-found: ignore
