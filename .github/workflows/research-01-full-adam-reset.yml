@@ -1,0 +1,71 @@
+name: Research 01 — full Adam-state reset at recluster
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/research-01-full-adam-reset.yml"
+permissions:
+  contents: read
+jobs:
+  full_reset:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Reconstruct public fineweb data and instrumented runner
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Add resetting optimizer step counter, not just moving-average moments
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("research-lab/01-rare-words-shared-output-vectors/grid_study_runtime.py")
+          s=p.read_text()
+          a='p.add_argument("--seed", type=int, default=0)'
+          assert s.count(a)==1
+          s=s.replace(a,'p.add_argument("--reset_step", type=int, choices=[0,1], default=0); '+a)
+          b='                    st["exp_avg_sq"].zero_()'
+          assert s.count(b)==1
+          s=s.replace(b,b+'\n                    if a.reset_step: st["step"].zero_()')
+          p.write_text(s)
+          PY
+      - name: Three-seed full reset of C only and C plus U
+        run: |
+          python -u - <<'PY' | tee full_reset.log
+          import subprocess,sys,json
+          from pathlib import Path
+          root=Path("research-lab/01-rare-words-shared-output-vectors")
+          out=root/"full_reset.jsonl"
+          out.unlink(missing_ok=True)
+          for seed in (0,1,2):
+              for mode in ("reset_c","reset_both"):
+                  tag=f"full_{mode}_seed{seed}"
+                  args=[sys.executable,str(root/"grid_study_runtime.py"),"--dev","cpu",
+                        "--V","6000","--steps","400","--batch","32",
+                        "--heps","1e-5","--seed",str(seed),"--reset_step","1",
+                        "--moment",mode,"--clus","64",
+                        "--tag",tag,"--out",out.name,"--threads","2"]
+                  subprocess.run(args,check=True)
+          rows=[json.loads(x) for x in out.read_text().splitlines()]
+          assert len(rows)==6
+          for r in rows:
+              assert len(r["regroup_records"])==7
+              print(r["tag"],r["scores"]["val"])
+          PY
+      - name: Save independent state-reset results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rare-01-full-adam-reset
+          path: |
+            full_reset.log
+            research-lab/01-rare-words-shared-output-vectors/full_reset.jsonl
+          if-no-files-found: ignore
