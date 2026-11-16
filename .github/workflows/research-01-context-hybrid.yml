@@ -1,0 +1,41 @@
+name: Research 01 — same-data context grouping with online updates
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/research-01-context-hybrid.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/context_hybrid_study.py"
+permissions:
+  contents: read
+jobs:
+  context_hybrid:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Build static context embeddings from exactly the same train tokens
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/context_groups.py
+      - name: Build original LM experiment with isolated instrumentation
+        run: python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Run semantic context plus 50/200-step online regrouping
+        run: |
+          set -euo pipefail
+          python -u research-lab/01-rare-words-shared-output-vectors/context_hybrid_study.py | tee context_hybrid.log
+      - name: Save raw results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rare-01-context-hybrid
+          path: |
+            context_hybrid.log
+            research-lab/01-rare-words-shared-output-vectors/context_hybrid_study.jsonl
+          if-no-files-found: ignore
