@@ -8,10 +8,6 @@ on:
         required: true
         options: [pilot, confirm]
         default: pilot
-  push:
-    paths:
-      - "research-lab/01-rare-words-shared-output-vectors/**"
-      - ".github/workflows/research-01-rare-word-moments.yml"
 permissions:
   contents: read
 jobs:
