@@ -1,0 +1,72 @@
+name: Research 01 — batch size versus reclustering frequency
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/research-01-batch-tokens.yml"
+permissions:
+  contents: read
+jobs:
+  batch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU training dependencies
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare standard tokenized data and isolated runner
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Fixed-token batch sweep; separate optimizer step count from cluster update frequency
+        run: |
+          python -u - <<'PY'
+          import json
+          import subprocess
+          import sys
+          from pathlib import Path
+          lab = Path("research-lab/01-rare-words-shared-output-vectors")
+          records = lab / "batch_study.jsonl"
+          records.unlink(missing_ok=True)
+          for batch in (16, 32, 64, 128):
+              steps = 12800 // batch
+              adjusted_recluster = round(50 * 32 / batch)
+              for seed in (0, 1):
+                  arms = [
+                      ("epsilon", []),
+                      ("cluster_step_50", ["--clus", "64", "--recl", "50"]),
+                  ]
+                  if batch != 32:
+                      arms.append(("cluster_equal_tokens", ["--clus", "64", "--recl", str(adjusted_recluster)]))
+                  for arm, flags in arms:
+                      cmd = [
+                          sys.executable, str(lab / "grid_study_runtime.py"), "--dev", "cpu",
+                          "--V", "6000", "--steps", str(steps), "--batch", str(batch),
+                          "--heps", "1e-5", "--seed", str(seed), "--moment", "keep",
+                          "--tag", f"batch{batch}_seed{seed}_{arm}", "--out", records.name,
+                          "--threads", "2", *flags
+                      ]
+                      subprocess.run(cmd, check=True)
+          rs = [json.loads(z) for z in records.read_text().splitlines()]
+          assert len(rs) == 22
+          for batch in (16, 32, 64, 128):
+              for seed in (0, 1):
+                  arm = {r["tag"].split("_", 2)[2]: r for r in rs if r["tag"].startswith(f"batch{batch}_seed{seed}_")}
+                  base = arm["epsilon"]["scores"]["val"]
+                  print(f"BATCH {batch} SEED {seed} base={base:.4f}")
+                  for name, r in arm.items():
+                      if name != "epsilon":
+                          print(f"  {name} loss={r['scores']['val']:.4f} gain={base-r['scores']['val']:.4f} reclusters={len(r['regroup_records'])}")
+          PY
+      - name: Archive batch-study records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rare-01-batch-vs-reclustering
+          path: research-lab/01-rare-words-shared-output-vectors/batch_study.jsonl
+          if-no-files-found: ignore
