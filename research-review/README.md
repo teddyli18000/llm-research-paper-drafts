@@ -30,7 +30,7 @@
 
 ## 主要参考文献
 
-**① 输出词向量**：[Botha & Blunsom 2014](https://proceedings.mlr.press/v32/botha14.html) · [LightRNN 2016](https://arxiv.org/abs/1610.09893) · [Soft Weight-Sharing 2017](https://arxiv.org/abs/1702.04008) · [GroupReduce 2018](https://papers.neurips.cc/) · [Syntactic Smoothing 2024](https://arxiv.org/abs/2410.11462) · [LENS 2025](https://aclanthology.org/2025.acl-long.930/)
+**① 输出词向量**：[Botha & Blunsom 2014](https://proceedings.mlr.press/v32/botha14.html) · [LightRNN 2016](https://arxiv.org/abs/1610.09893) · [Soft Weight-Sharing 2017](https://arxiv.org/abs/1702.04008) · [GroupReduce 2018](https://proceedings.neurips.cc/paper_files/paper/2018/hash/a2b8a85a29b2d64ad6f47275bf1360c6-Abstract.html) · [Syntactic Smoothing 2024](https://arxiv.org/abs/2410.11462) · [LENS 2025](https://aclanthology.org/2025.acl-long.930/)
 
 
 **其他方向**：[Baydin et al. 2018](https://mlanthology.org/iclr/2018/baydin2018iclr-online/) · [MuonMax/Momo 2026](https://proceedings.mlr.press/v306/crawshaw26a.html) · [Memory Mosaics](https://arxiv.org/abs/2405.06394) · [Sanford et al. 2024](https://proceedings.mlr.press/v235/sanford24a.html) · [Engram](https://arxiv.org/abs/2601.07372) · [X-GRAM](https://arxiv.org/abs/2604.21724)

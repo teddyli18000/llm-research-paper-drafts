@@ -13,7 +13,7 @@
 - [Botha & Blunsom, ICML 2014](https://proceedings.mlr.press/v32/botha14.html)：形态学构成的共享词向量，提供跨词学习的理论与实验先例。
 - [LightRNN, 2016](https://arxiv.org/abs/1610.09893)：训练中重分配共享词表示，关注紧凑结构。
 - [Soft Weight-Sharing, ICLR 2017](https://arxiv.org/abs/1702.04008)：动态权重簇和共享优化。
-- [GroupReduce, NeurIPS 2018](https://papers.neurips.cc/)：直接研究输出 softmax 矩阵的分组、迭代调整与组内低秩近似，目标是压缩。
+- [GroupReduce, NeurIPS 2018](https://proceedings.neurips.cc/paper_files/paper/2018/hash/a2b8a85a29b2d64ad6f47275bf1360c6-Abstract.html)：直接研究输出 softmax 矩阵的分组、迭代调整与组内低秩近似，目标是压缩。
 - [Syntactic Smoothing, EMNLP 2024](https://arxiv.org/abs/2410.11462)：以句法关系传递学习信号。
 - [LENS, ACL 2025](https://aclanthology.org/2025.acl-long.930/)：对预训练 LM 输出层 token 向量进行 K-means 聚类，构建簇级表示。
 
