@@ -8,7 +8,7 @@
 
 ## 最近邻与撞车判断
 
-1. **Botha & Blunsom (2014)**：词输出表示通过 morpheme 等共享组合构造，长尾词共享信号已知。**撞上基本动机与结构，而非同样的动态组法**。[ACL](https://aclanthology.org/P14-1131/)
+1. **Botha & Blunsom (2014)**：词输出表示通过 morpheme 等共享组合构造，长尾词共享信号已知。**撞上基本动机与结构，而非同样的动态组法**。[ACL](https://proceedings.mlr.press/v32/botha14.html)
 2. **Syntactic Smoothing (Diehl Martinez et al., 2024)**：通过语法先验传播学习信号、改善稀有词。**撞上把相似低频词联合学习的原则；与自行发现的聚类不同**。[arXiv](https://arxiv.org/abs/2410.11462)
 3. **Soft Weight-Sharing (Ullrich et al., ICLR 2017)**：利用可学习的权重聚类/共享进行压缩。**“学出一组共享权重”不是首创；目标与实现不同**。[arXiv](https://arxiv.org/abs/1702.04008)
 4. **LightRNN、动态类别分配等**：原论文已讨论通过重新分配共享结构降低模型体积。需做实现层面的精确对照，不能写“首次动态聚类输出词向量”。
