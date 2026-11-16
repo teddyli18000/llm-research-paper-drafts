@@ -1,0 +1,62 @@
+name: Research 01 — large batch with matched training steps
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/research-01-large-batch-longer.yml"
+permissions:
+  contents: read
+jobs:
+  scaling:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare public FineWeb and instrumented model
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Batch 128 × 400 updates; three grouping schedules and two seeds
+        run: |
+          python -u - <<'PY' | tee large_batch.log
+          import json,subprocess,sys
+          from pathlib import Path
+          root=Path("research-lab/01-rare-words-shared-output-vectors")
+          result=root/"large_batch.jsonl"
+          result.unlink(missing_ok=True)
+          for seed in (0,1):
+              for name,flags in (
+                  ("baseline", []),
+                  ("cluster_50steps", ["--clus","64","--recl","50"]),
+                  ("cluster_12steps", ["--clus","64","--recl","12"])):
+                  cmd=[sys.executable,str(root/"grid_study_runtime.py"),"--dev","cpu",
+                       "--V","6000","--steps","400","--batch","128","--heps","1e-5",
+                       "--seed",str(seed),"--tag",f"long_batch128_s{seed}_{name}",
+                       "--out",result.name,"--threads","2",*flags]
+                  subprocess.run(cmd,check=True)
+          rs=[json.loads(x) for x in result.read_text().splitlines()]
+          assert len(rs)==6
+          for seed in (0,1):
+              a={r["tag"].split("_",3)[3]:r for r in rs if r["args"]["seed"]==seed}
+              b=a["baseline"]["scores"]["val"]
+              print(f"SEED {seed} BASELINE {b:.6f}")
+              for name in ("cluster_50steps","cluster_12steps"):
+                  z=a[name]
+                  print(f"  {name} loss={z['scores']['val']:.6f} gain={b-z['scores']['val']:.6f} reclusters={len(z['regroup_records'])}")
+          PY
+      - name: Upload all experiment results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rare-01-large-batch-longer-training
+          path: |
+            large_batch.log
+            research-lab/01-rare-words-shared-output-vectors/large_batch.jsonl
+          if-no-files-found: ignore
