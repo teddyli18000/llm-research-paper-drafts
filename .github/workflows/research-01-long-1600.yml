@@ -1,0 +1,40 @@
+name: Research 01 — long 1600-step train, dynamic vs semantic grouping
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research-lab/01-rare-words-shared-output-vectors/long_training_compare.py"
+      - ".github/workflows/research-01-long-1600.yml"
+permissions:
+  contents: read
+jobs:
+  longrun:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare train and same-data static semantic groups
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/context_groups.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Train 1600-step four-arm, two-model-init-seed comparison
+        run: |
+          set -euo pipefail
+          python -u research-lab/01-rare-words-shared-output-vectors/long_training_compare.py | tee long_training.log
+      - name: Export full results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research01-long-training-data
+          path: |
+            long_training.log
+            research-lab/01-rare-words-shared-output-vectors/long_training_compare.jsonl
+          if-no-files-found: ignore
