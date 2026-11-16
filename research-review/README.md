@@ -44,10 +44,10 @@
 
 ## 复现状态
 
-- 检查了源论文、研究日志和脚本结构；没有自行运行原结果。
+- 检查了源论文、研究日志与脚本，并在 GitHub Linux CPU 上独立运行了 04/05 的 headline 实验；**实测结果和首次 CI 误报原因见 [REPRODUCTION.md](REPRODUCTION.md)**。
 - 增设 GitHub Actions 工作流 `.github/workflows/research-reproduction.yml`：仅做 04、05 的 **CPU headline smoke reproduction**，不会覆盖原代码；日志作为 Actions artifact。①/②/⑥需要数据或工作流适配后再配置。
-- 工作流结果只验证可运行与单次现象，**不等于科学复现、多种子复现、文献新颖性证明**。
-- 初次报告以作者数据为“报告值”，Actions 真正执行结果应另行记录，不自动把报告值改为已验证。
+- [有效 Actions 运行 #43792700369](https://github.com/teddyli18000/llm-research-paper-drafts/actions/runs/43792700369) 全通过，并核对各项数值。工作流只验证单次合成任务 headline 现象，**不等于多种子外推或文献新颖性证明**。
+- 01/02/06 仍为作者报告值；04/05 的单次实际数值与环境问题均已记录在 REPRODUCTION.md。
 
 ## 独立审查的核心外部文献
 
