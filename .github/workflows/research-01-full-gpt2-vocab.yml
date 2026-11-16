@@ -1,0 +1,67 @@
+name: Research 01 — near-full GPT-2 vocabulary (50k) replication
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/research-01-full-gpt2-vocab.yml"
+permissions:
+  contents: read
+jobs:
+  full_vocab:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        arm: [epsilon, dynamic]
+        seed: [0, 1]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU research dependencies
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare public GPT2-token FineWeb data and original model copy
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Train width64 model, 50k token vocab, 800 steps at matching seed
+        run: |
+          set -euo pipefail
+          case "${{ matrix.arm }}" in
+            epsilon) GROUP="--clus 0" ;;
+            dynamic) GROUP="--clus 64 --cinit kmeans --recl 50" ;;
+          esac
+          python -u research-lab/01-rare-words-shared-output-vectors/grid_study_runtime.py \
+            --dev cpu --threads 2 --V 50258 --width 64 --layers 2 --heads 4 \
+            --batch 32 --acc 4 --L 64 --steps 800 \
+            --heps 1e-5 --hlr 0.05 --clr 0.01 --seed ${{ matrix.seed }} \
+            $GROUP \
+            --tag "gpt2full_${{ matrix.arm }}_seed${{ matrix.seed }}" \
+            --out "gpt2full_${{ matrix.arm }}_seed${{ matrix.seed }}.jsonl" | tee full_vocab.log
+      - name: Verify complete finite results
+        run: |
+          python - <<'PY'
+          import json, math
+          from pathlib import Path
+          directory=Path("research-lab/01-rare-words-shared-output-vectors")
+          files=list(directory.glob("gpt2full_*.jsonl"))
+          assert len(files)==1
+          results=[json.loads(line) for line in files[0].read_text().splitlines()]
+          assert len(results)==1
+          r=results[0]
+          assert math.isfinite(r["scores"]["val"])
+          assert r["args"]["steps"]==800 and r["args"]["V"]==50258
+          PY
+      - name: Archive per-arm bin losses and run parameters
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-vocab-${{ matrix.arm }}-seed${{ matrix.seed }}
+          path: |
+            full_vocab.log
+            research-lab/01-rare-words-shared-output-vectors/gpt2full_*.jsonl
+          if-no-files-found: ignore
