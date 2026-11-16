@@ -1,0 +1,39 @@
+name: Research 01 — dynamic classes auxiliary-loss baseline
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/research-01-aux-class-loss.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/aux_class_loss_study.py"
+permissions:
+  contents: read
+jobs:
+  aux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare data and instrumented model
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Compare auxiliary group target losses against cluster-gradient coupling
+        run: |
+          set -euo pipefail
+          python -u research-lab/01-rare-words-shared-output-vectors/aux_class_loss_study.py | tee aux_class.log
+      - name: Archive results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rare-01-auxiliary-class-loss
+          path: |
+            aux_class.log
+            research-lab/01-rare-words-shared-output-vectors/aux_class_loss.jsonl
+          if-no-files-found: ignore
