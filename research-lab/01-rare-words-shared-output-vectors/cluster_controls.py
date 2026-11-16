@@ -12,8 +12,7 @@ src = src.replace(
     'p.add_argument("--group_mode", choices=["kmeans", "random_refresh", "same_membership", "warmstart"], default="kmeans"); p.add_argument("--seed", type=int, default=0)'
 )
 src = src.replace(
-    '        asg = kmeans(R, K)
-        cm = torch.zeros(K, R.shape[1], device=R.device)',
+    '        asg = kmeans(R, K)\n        cm = torch.zeros(K, R.shape[1], device=R.device)',
     '''        if a.group_mode == "random_refresh":
             asg = torch.randperm(len(R), device=R.device) % K
         elif a.group_mode == "same_membership":
