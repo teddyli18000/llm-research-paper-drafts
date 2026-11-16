@@ -1,0 +1,39 @@
+name: Research 01 — same-seed CPU repeatability
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research-lab/01-rare-words-shared-output-vectors/repeatability_study.py"
+      - ".github/workflows/research-01-repeatability.yml"
+permissions:
+  contents: read
+jobs:
+  repeatability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare identical data and code for all replicates
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Repeat same V16k width128 seeded training 6 times
+        run: |
+          set -euo pipefail
+          python -u research-lab/01-rare-words-shared-output-vectors/repeatability_study.py | tee repeatability.log
+      - name: Save run manifest and loss distribution
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research01-repeatability
+          path: |
+            repeatability.log
+            research-lab/01-rare-words-shared-output-vectors/repeatability.jsonl
+          if-no-files-found: ignore
