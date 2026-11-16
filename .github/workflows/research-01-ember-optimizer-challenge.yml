@@ -1,0 +1,56 @@
+name: Research 01 — official Ember optimizer challenge
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-ember-optimizer-challenge.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/ember_optimizer_challenge.py"
+      - "research-review/01-rare-words-shared-output-vectors/EMBER_CHALLENGE_PROTOCOL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ember_optimizer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [0, 1, 2]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU and pinned official Ember
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "git+https://github.com/katop1234/ember.git@76f30117b2d948874cd1c965c4f6813fa9de8caa"
+      - name: Prepare exact original-model study runtime
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Train 18 matched arms on each seed
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/ember_optimizer_challenge.py --seed ${{ matrix.seed }} | tee ember_seed${{ matrix.seed }}.log
+      - name: Validate all raw outcomes
+        run: |
+          python - <<'PY'
+          import json, math
+          from pathlib import Path
+          paths=list(Path("research-lab/01-rare-words-shared-output-vectors").glob("ember_challenge_seed*.jsonl"))
+          assert len(paths)==1
+          rows=[json.loads(x) for x in paths[0].read_text().splitlines()]
+          assert len(rows)==18 and len({x["tag"] for x in rows})==18
+          assert all(math.isfinite(x["scores"]["val"]) for x in rows)
+          assert all(x["args"]["steps"]==400 and x["args"]["V"]==6000 for x in rows)
+          PY
+      - name: Archive detailed outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ember-head-seed${{ matrix.seed }}
+          path: |
+            ember_seed${{ matrix.seed }}.log
+            research-lab/01-rare-words-shared-output-vectors/ember_challenge_seed*.jsonl
+          if-no-files-found: ignore
