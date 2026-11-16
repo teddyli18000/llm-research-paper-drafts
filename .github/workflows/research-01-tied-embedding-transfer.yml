@@ -1,0 +1,54 @@
+name: Research 01 — tied token-table transfer
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-tied-embedding-transfer.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/tied_embedding_study.py"
+      - "research-review/01-rare-words-shared-output-vectors/TIED_EMBEDDING_TRANSFER_PROTOCOL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tied_embeddings:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [0, 1, 2]
+        steps: [400, 1600]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: CPU dependencies
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare public data, same-data co-occurrence groups and instrumented LM
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/context_groups.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Run tied-weight comparison
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/tied_embedding_study.py --seed ${{ matrix.seed }} --steps ${{ matrix.steps }} | tee tied_seed${{ matrix.seed }}_steps${{ matrix.steps }}.log
+      - name: Check three finite tied-head outcomes
+        run: |
+          python - <<'PY'
+          import json,math
+          from pathlib import Path
+          rows=[json.loads(x) for p in Path("research-lab/01-rare-words-shared-output-vectors").glob("tied_s*_steps*.jsonl") for x in p.read_text().splitlines()]
+          assert len(rows)==3
+          assert all(math.isfinite(x["scores"]["val"]) and x["args"]["tie"]==1 for x in rows)
+          PY
+      - name: Archive results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tied-seed${{ matrix.seed }}-steps${{ matrix.steps }}
+          path: |
+            tied_seed*.log
+            research-lab/01-rare-words-shared-output-vectors/tied_s*_steps*.jsonl
+          if-no-files-found: ignore
