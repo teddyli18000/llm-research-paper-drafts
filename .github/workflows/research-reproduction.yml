@@ -1,0 +1,32 @@
+name: Research headline reproduction (CPU)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/research-reproduction.yml"
+permissions:
+  contents: read
+jobs:
+  headline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install numpy
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: 04 pointer heads
+        run: sh 04-attention-chain-following-heads/reproduce.sh 2>&1 | tee research-04.log
+      - name: 05 pointer doubling
+        run: sh 05-attention-pointer-doubling/reproduce.sh 2>&1 | tee research-05.log
+      - name: Archive run output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-reproduction-logs
+          path: research-*.log
+          if-no-files-found: ignore
