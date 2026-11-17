@@ -32,3 +32,11 @@ All should be trained from matching initial seeds, head optimizer/LR, group assi
 A fully independent test of this decomposition is a useful next experiment *after* the currently running full smoothing, concept-probability and Tree Loss reparam comparisons are analyzed. Fix a protocol before collecting training results; avoid continually searching more hyperparameters on the same V6k validation corpus.
 
 This identifies a credible mechanism question that could differentiate a new class-residual optimization paper from the existing shared-class parameterizations, but the equation alone does not confer strong algorithmic novelty.
+
+
+## Status correction after the first decomposition run
+
+The first one-sided run used raw \(Pp\) and \(-Py\), not the centered terms above. Because both raw terms sum to the same batch-mean hidden vector across vocabulary rows, they contain opposite vocabulary-uniform components. The full difference cancels this component. A uniform row update is softmax-invariant for the current batch but can still affect Ember's adaptive state. Therefore the first one-sided CE degradation is **not a clean test of whether either centered residual is useful**.
+
+The full-projector arm remains valid and retains its measured gain. The raw one-sided results are exploratory only. The preregistered centered follow-up compares \(Pp-U\), \(Py-U\), the full difference, and uniform-only plus/minus controls: [CENTERED_RESIDUAL_PROTOCOL.md](CENTERED_RESIDUAL_PROTOCOL.md), Actions #44052591527.
+
