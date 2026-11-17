@@ -1,0 +1,56 @@
+name: Research 01 — batch128 contextual projection rescue test
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-high-batch-context-rescue.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/high_batch_context_rescue.py"
+      - "research-review/01-rare-words-shared-output-vectors/HIGH_BATCH_CONTEXT_RESCUE_PROTOCOL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  high_batch_rescue:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [281, 283, 293]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU scientific dependencies and Ember
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "git+https://github.com/katop1234/ember.git@76f30117b2d948874cd1c965c4f6813fa9de8caa"
+      - name: Prepare public data, precomputed train-context groups, original runtime
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/context_groups.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Run seven locked batch128 arms with fresh model seeds
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/high_batch_context_rescue.py --seed ${{ matrix.seed }} | tee high_batch_rescue.log
+      - name: Verify all results
+        run: |
+          python - <<'PY'
+          import json,math
+          from pathlib import Path
+          files=list(Path("research-lab/01-rare-words-shared-output-vectors").glob("high_batch_rescue_seed*.jsonl"))
+          assert len(files)==1
+          rows=[json.loads(s) for s in files[0].read_text().splitlines()]
+          assert len(rows)==7 and len({r["tag"] for r in rows})==7
+          assert all(math.isfinite(r["scores"]["val"]) and r["tokens"]==819200 for r in rows)
+          PY
+      - name: Archive all frequency metrics and raw logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: high-batch-context-rescue-seed${{ matrix.seed }}
+          path: |
+            high_batch_rescue.log
+            research-lab/01-rare-words-shared-output-vectors/high_batch_rescue_seed*.jsonl
+          if-no-files-found: ignore
