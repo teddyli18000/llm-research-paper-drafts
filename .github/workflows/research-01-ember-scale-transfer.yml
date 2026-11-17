@@ -1,0 +1,60 @@
+name: Research 01 — Ember independent-seed scale transfer
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-ember-scale-transfer.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/ember_scale_transfer.py"
+      - "research-review/01-rare-words-shared-output-vectors/EMBER_SCALE_TRANSFER_PROTOCOL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scale_transfer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [41, 73, 109]
+        scale: [16000, 50258]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU, clustering and official Ember
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "git+https://github.com/katop1234/ember.git@76f30117b2d948874cd1c965c4f6813fa9de8caa"
+      - name: Prepare public FineWeb and instrumented original training
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          if [ "${{ matrix.scale }}" = "16000" ]; then
+            python research-lab/01-rare-words-shared-output-vectors/context_groups_16000.py
+          fi
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Train fixed-control transfer arms
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/ember_scale_transfer.py --seed ${{ matrix.seed }} --scale ${{ matrix.scale }} | tee scale_transfer.log
+      - name: Verify all expected finite complete outcomes
+        run: |
+          python - <<'PY'
+          import json,math
+          from pathlib import Path
+          ps=list(Path("research-lab/01-rare-words-shared-output-vectors").glob("ember_transfer_V*_seed*.jsonl"))
+          assert len(ps)==1
+          rows=[json.loads(x) for x in ps[0].read_text().splitlines()]
+          assert len(rows)==(7 if rows[0]["args"]["V"]==16000 else 6)
+          assert len(set(x["tag"] for x in rows))==len(rows)
+          assert all(math.isfinite(x["scores"]["val"]) for x in rows)
+          PY
+      - name: Archive complete frequency-bin results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ember-transfer-V${{ matrix.scale }}-seed${{ matrix.seed }}
+          path: |
+            scale_transfer.log
+            research-lab/01-rare-words-shared-output-vectors/ember_transfer_V*_seed*.jsonl
+          if-no-files-found: ignore
