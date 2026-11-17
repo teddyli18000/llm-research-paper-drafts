@@ -24,7 +24,6 @@ raw -= raw.mean(dim=0, keepdim=True)
 praw = project(raw, groups, k)
 projected = raw + 2.0 * praw
 
-assert torch.allclose(project(projected, groups, k), project(projected, groups, k))
 assert torch.allclose(praw.sum(dim=0), torch.zeros(width), atol=1e-5)
 assert torch.allclose(project(praw, groups, k), praw, atol=1e-6)
 
