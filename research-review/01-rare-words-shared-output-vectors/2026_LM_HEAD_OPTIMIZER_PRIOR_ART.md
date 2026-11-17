@@ -131,6 +131,85 @@ The paper studies the rank-\(d\) mapping from hidden states to \(V\)-dimensional
 
 **Collision boundary:** this is a different bottleneck from token-row gradient sharing. A class-mean projector applied to output-head parameter gradients does not, by itself, restore logit-gradient components in the null space of the head's backward map. Do not claim the projector solves the LM-head backward bottleneck.
 
+## Additional full-text collision checks
+
+### Hierarchical superclass loss: Urbani et al. (2024)
+
+*Harnessing Superclasses for Learning from Hierarchical Databases* [Urb24] defines a proper scoring rule over the probability mass of each ancestor superclass. For leaf softmax \(p\), superclass membership vector \(a_j\), and \(s_j=a_j^\top p\), its loss is
+
+\[
+L_T(p,y)=-\sum_{j\in\mathrm{ancestors}(y)}w_j\log s_j.
+\]
+
+The logit gradient is
+
+\[
+\frac{\partial L_T}{\partial u_r}
+=p_r\left(W_y-\sum_{\substack{j\in\mathrm{ancestors}(y)\\r\in v_j}}\frac{w_j}{s_j}\right).
+\]
+
+This is a genuine class-probability-mass objective, so it is closer than ordinary label smoothing. But it is not the candidate projector: it weights each member by its own \(p_r\), depends nonlinearly on target-path superclass masses \(s_j\), and does not broadcast the same class-mean residual to every member row. The candidate remains a fixed optimizer-side map \(G\mapsto(I+\alpha P)G\), not this hierarchy-aware loss.
+
+### Concept-level training: Iyer et al. (2026)
+
+*Beyond Tokens: Concept-Level Training Objectives for LLMs* [Iye26] presents two routes: data augmentation with alternative synonym/hypernym completions, and a set-likelihood objective over acceptable completions. Under the natural one-token set-probability interpretation \(P_C=\sum_{i\in C}p_i\), the derived logit gradient is
+
+\[
+\frac{\partial[-\log P_C]}{\partial z_j}
+=p_j-\mathbf1[j\in C]\frac{p_j}{P_C}.
+\]
+
+This is a probability-weighted conditional target over an accepted set, not a uniform class-mean residual. The paper does not derive or claim the projector operation. Its gradient equation is a derivation from the stated objective, not an equation printed in the paper.
+
+### Embedding-similarity supervision: Inan & Khosravi (2016)
+
+*Improved Learning through Augmenting the Loss* [Ina16b] is an important language-model neighbor. It ties the output projection to the input embedding matrix, \(z=L^\top h\), constructs an informative target by
+
+\[
+\widetilde y=\operatorname{softmax}(L^\top L y),
+\]
+
+and trains with
+
+\[
+\mathcal L=CE(y,p)+\alpha D_{KL}(\widetilde y\Vert p).
+\]
+
+The extra prediction-logit gradient is target-side \(p-\widetilde y\). The target itself depends on the embedding matrix, so its full parameter derivative also includes the derivative through \(\widetilde y\). It is an embedding-similarity soft-target loss on a tied-embedding RNNLM, not an untied flat-head projector and not an added \(Pp\) term.
+
+### Cluster-based soft targets: Mei et al. (2024)
+
+*Output Regularization With Cluster-Based Soft Targets* [Mei23] explicitly builds classwise soft targets from a class-relationship matrix obtained in cluster space, then combines those targets with ground truth. The available abstract establishes that it is a target-construction/output-regularization method in image classification. The full PDF was not available in this audit, so its exact target formula and derivative remain unverified. It must remain a live adjacent reference; do not claim a full-text exclusion.
+
+### Other class-aware objectives and output factorizations
+
+- **Per23, Beyond One-Hot-Encoding:** uses auxiliary semantic vectors to build a similarity Gram matrix and mixes its class-similarity row with the one-hot label. Its cross-entropy gradient is \(T p-q\), where \(T=\sum_iq_i\); this is a soft-target method, not uniform residual broadcast across class-member rows.
+- **Dog19, Label-similarity Curriculum Learning:** constructs time-varying semantic soft targets and applies ordinary soft-target cross-entropy. It changes the target distribution; it does not add a prediction-side class projector.
+- **GALA [Zha24h]:** applies target-conditioned logit offsets based on accumulated positive/negative class gradients. Its training gradient is ordinary cross-entropy \(q-y\) on adjusted logits; it does not compute \(P(p-y)\).
+- **FlexiGrad [Zho26b]:** performs conflict removal/cooperation weighting between gradients of different hierarchy-level tasks. It operates on task gradients, not token-row class means.
+- **SGG [Li25f]:** clusters momentum entries within a layer and scales per-parameter learning rates by cluster-specific factors. It does not average or project the actual vocabulary-row gradient direction.
+- **Coupled Adam [Sto25]:** keeps row-specific gradients and first moments but averages bias-corrected second moments across vocabulary rows. It couples denominators, not gradient vectors.
+- **Heavy-Tailed Class Imbalance [Kun24] and Rare-Token Fixed Points [Kar26b]:** explain optimizer/frequency effects that can alter rare-token learning without any class projector. They motivate matched optimizer controls and frequency-stratified reporting.
+- **LightRNN [Li16], VQ-Logits [Sha25], and Self-organized Hierarchical Softmax [She17]:** share output parameters or cluster the vocabulary, but replace/factorize the flat output distribution. VQ-Logits aggregates token-logit gradients into shared codebook vectors; LightRNN uses separate row/column softmaxes; Self-organized Hierarchical Softmax uses cluster then within-cluster softmax. None retains an independent full token row and adds a normalized class-mean residual to it.
+
+### Why this is not generally the gradient of another scalar loss
+
+For fixed groups, let \(P=P^\top=P^2\), \(p=\operatorname{softmax}(z)\), and
+
+\[
+g(z)=(I+\alpha P)(p-y).
+\]
+
+The Jacobian of this transformed logit field is
+
+\[
+J_g=(I+\alpha P)J_{\mathrm{softmax}},
+\qquad
+J_{\mathrm{softmax}}=\operatorname{diag}(p)-pp^\top.
+\]
+
+A vector field that is the gradient of a twice-differentiable scalar loss must have a symmetric Jacobian. Here this requires \(PJ_{\mathrm{softmax}}=J_{\mathrm{softmax}}P\), which does not hold for generic nonuniform probabilities within groups. For example, with \(p=(0.55,0.25,0.15,0.05)\), groups \(\{1,2\},\{3,4\}\), and \(\alpha=2\), the Frobenius norm of \(J_g-J_g^\top\) is \(0.2\). Thus the candidate is naturally an optimizer-side preconditioned gradient, not generally the gradient of a conventional scalar loss. It remains a positive-definite preconditioner because \(I+\alpha P\) has eigenvalues \(1\) and \(1+\alpha\) for \(\alpha>-1\).
+
 ## What the fork's evidence currently supports
 
 - The flat-head projector improves over plain Ember at V≈50k on the independent seeds tested, but is essentially tied with the upstream shared-centroid method and centroid+Adam.
@@ -138,6 +217,7 @@ The paper studies the rank-\(d\) mapping from hidden states to \(V\)-dimensional
 - On V6k at batch128, fixed train-only context groups give a strong short-horizon gain over plain Ember and upstream centroids. The same fixed-context result does not transfer to V≈50k.
 - The original dynamic projector is not batch-robust without context initialization.
 - The cross-microbatch rho/eta selection experiments do not show a stable advantage over the simpler projected-energy gate.
+- The V6k residual decomposition shows that neither prediction-side Pp nor target-side -Py alone reproduces the gain; the difference Pp-Py is essential. Fixed-context full projection beats plain Ember and upstream centroid+Ember at both tested batches and all three fresh seeds.
 - Standard target-side semantic smoothing and concept-class CE do not reproduce the projector's validation results.
 - The Tree-Loss reparameterization control is near-tied with the direct projector under Ember and Adam.
 
@@ -148,7 +228,7 @@ These results support a **narrow normalized class-mean preconditioner hypothesis
 1. Finish the preregistered raw-second-moment routing study. The general routing principle is Hu et al.'s; only an empirical LM-head/Ember adaptation can be claimed.
 2. Add output-only epsilon \(10^{-4}\) from Han et al. as a rare/absent-row baseline, with per-exposure buckets.
 3. Add a faithful projected RowNorm baseline from Somasundaram et al. and a MuonIO baseline at V≈50k.
-4. Isolate prediction-side \(Pp\) and target-side \(-Py\) contributions. Standard target smoothing is not an exact comparator for the full residual transform.
+4. The prediction/target residual decomposition is complete; retain the full interaction as the mechanism hypothesis and test the absolute-step regrouping schedule.
 5. Test on an untouched shard and at a substantially larger model before writing a general LM-pretraining claim.
 
 ## Bibliographic links
