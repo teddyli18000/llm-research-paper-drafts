@@ -33,7 +33,7 @@ print("TARGET_ONLY_LABEL_SMOOTHING_HEAD_GRADIENT PASS")
 
 # Projector formula and the explicit predicted minus target group residual.
 alpha = 2.0
-projected = torch.zeros(K,d).index_add_(0,groups,hard)[groups] / counts[:,None]
+projected = torch.zeros(K,d).index_add_(0,groups,hard)[groups] / counts[groups,None]
 via_operator = hard + alpha*projected
 
 onehot = F.one_hot(t, num_classes=V)
