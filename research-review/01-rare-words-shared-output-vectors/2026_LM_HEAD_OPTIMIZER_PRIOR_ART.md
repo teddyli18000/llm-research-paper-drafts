@@ -220,13 +220,13 @@ The extra prediction-logit gradient is target-side \(p-\widetilde y\). The targe
 S_{\mathrm{diff}}^\tau(p,y)=(p-y)^\top H_\tau(p-y),\qquad H_\tau=e^{-\tau L/2},
 \]
 
-with probability-coordinate gradient \(2H_\tau(p-y)\). For a graph that is a disjoint union of complete within-class cliques, the Laplacian eigenspaces split into the group-constant subspace and its within-group zero-sum complement. For equal group size \(n\),
+with probability-coordinate gradient \(2H_\tau(p-y)\). For a graph that is a disjoint union of complete within-class cliques, the Laplacian eigenspaces split into the group-constant subspace and its within-group zero-sum complement. For clique \(g\) of size \(n_g\),
 
 \[
-H_\tau=P+e^{-\tau n/2}(I-P),
+(H_\tau)_g=P_g+e^{-\tau n_g/2}(I-P_g),
 \]
 
-so as \(\tau\to\infty\), \(H_\tau\to P\). Thus a graph-aware proper score already produces the **same class-mean projector applied to the probability residual** in probability coordinates. The paper's resistance score on the same clique graph instead uses \(L^\dagger=(1/n)(I-P)\), the complementary within-group projector.
+so as \(\tau\to\infty\), \(H_\tau\to P=AD^{-1}A^\top\). The limiting score is \(\sum_g (p(g)-\mathbf1[g=g_y])^2/n_g\): a proper but generally **not strictly proper** score because within-group redistributions are invisible. Finite-\(\tau\) diffusion remains strictly proper. Thus a graph-aware score already produces the **same class-mean projector applied to the probability residual** in probability coordinates. The paper's resistance score on the same clique graph instead uses \(L^\dagger_g=(1/n_g)(I-P_g)\), the complementary within-group projector.
 
 This is a genuine and important prior-art overlap. But for a flat softmax head \(p=\operatorname{softmax}(z)\), the graph-score logit gradient is
 
