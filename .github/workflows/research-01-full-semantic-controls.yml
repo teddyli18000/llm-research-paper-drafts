@@ -1,0 +1,59 @@
+name: Research 01 — V50k strong semantic controls
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-full-semantic-controls.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/context_groups_50258.py"
+      - "research-lab/01-rare-words-shared-output-vectors/semantic_full_vocab_study.py"
+      - "research-review/01-rare-words-shared-output-vectors/FULL_VOCAB_SEMANTIC_CONTROL_PROTOCOL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  strong_semantic_control:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [41, 73, 109]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install scientific CPU dependencies
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare original public training and study runtime
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Build strongest same-data V50k context groups
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/context_groups_50258.py | tee context_precompute.log
+      - name: Compare static semantic, late online and unigram groups
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/semantic_full_vocab_study.py --seed ${{ matrix.seed }} | tee semantic_seed${{ matrix.seed }}.log
+      - name: Check valid completed result rows
+        run: |
+          python - <<'PY'
+          import json,math
+          from pathlib import Path
+          ps=list(Path("research-lab/01-rare-words-shared-output-vectors").glob("semantic_full_vocab_seed*.jsonl"))
+          assert len(ps)==1
+          rows=[json.loads(x) for x in ps[0].read_text().splitlines()]
+          assert len(rows)==3 and len({r["tag"] for r in rows})==3
+          assert all(math.isfinite(r["scores"]["val"]) for r in rows)
+          PY
+      - name: Archive all outcomes and preprocessing time
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v50k-semantic-seed${{ matrix.seed }}
+          path: |
+            context_precompute.log
+            semantic_seed*.log
+            research-lab/01-rare-words-shared-output-vectors/semantic_full_vocab_seed*.jsonl
+          if-no-files-found: ignore
