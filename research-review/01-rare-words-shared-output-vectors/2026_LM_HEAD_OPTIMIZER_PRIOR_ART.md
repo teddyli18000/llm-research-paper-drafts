@@ -360,3 +360,45 @@ These results support a **narrow normalized class-mean preconditioner hypothesis
 - Graph-proper scoring rules: https://arxiv.org/abs/2611.03274
 - Conceptizer: https://arxiv.org/abs/2610.33027
 - Learning Concepts, Not Tokens: https://aclanthology.org/2026.emnlp-main.1709/ (arXiv:2603.29123)
+
+
+## Reproduction-ready strong optimizer baselines
+
+The full-text audit now has enough detail to implement the following without relying on paper abstracts.
+
+### MuonIO [Ma26]
+
+For \(L\in\mathbb R^{V\times d}\), with momentum buffer \(M\):
+
+\[
+M_{t+1}=\beta M_t+(1-\beta)G_t,\quad
+r_i=\|M_{t+1,i,:}\|_2,\quad
+U_{i,:}=\frac{M_{t+1,i,:}}{\max(r_i,\epsilon)},
+\]
+\[
+s=\sum_{i=1}^V r_i,\qquad
+L_{t+1}=L_t-\frac{\lambda s}{\sqrt d}U.
+\]
+
+It uses one shared scalar \(s\) for the whole head, not independent row scales. There is no bias correction or weight decay in the published rule. The paper gives \(\beta=0.9\); selected head learning rates are 0.005 at 60M/130M and 0.001 at 1B. It does not report a numeric row-normalization epsilon. The paper reports 50% less I/O optimizer state and about 46% fewer I/O update FLOPs than Muon at 1B, with improved validation perplexity.
+
+### Projected RowNorm [Som26]
+
+Let \(P(X)=X-\mathbf1\,\operatorname{mean}_{rows}(X)\). With EMA momentum \(B_t\), the update is
+
+\[
+\hat B_t=\frac{B_t}{1-\mu^{t+1}},\quad
+C=P(\hat B_t),\quad
+R_i=\frac{C_i}{\|C_i\|_2+\epsilon_{\rm num}},\quad
+Q=P(R),\quad
+W_{t+1}=W_t-\gamma_tQ.
+\]
+
+The order is center, row-normalize, center again. The paper uses \(\mu=0.95\), \(\epsilon_{\rm num}=10^{-8}\), and no head weight decay. Reported peak head LRs are 0.0032 at 190M, 0.002133 at 380M, and 0.0016 at 640M. The paper clips the global gradient norm to 1.
+
+### Output-only Adam epsilon [Han26]
+
+The intervention is AdamW with \(\epsilon=10^{-4}\) for the output projection and \(\epsilon=10^{-8}\) for all other parameters. It does not construct a token mask. Across seven stable continual-training settings from 160M to 12B, the paper reports 39.4–67.9% forgetting reduction; the 160M run is a peak-LR-collapse exception. Its exposure-risk threshold is \(c(t)<1000\), with vocabulary deficiency measured as the occurrence-weighted share of old-domain evaluation targets below that threshold.
+
+These are the three strongest implementation baselines to add before a final novelty verdict. Their original hyperparameters come from much larger models, so the V6k/V50k runs need a small head-LR calibration rather than assuming the published peak rates transfer unchanged.
+
