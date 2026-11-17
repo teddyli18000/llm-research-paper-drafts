@@ -206,7 +206,7 @@ Run an exact residual decomposition with fresh seeds: compare the full projector
 - U shifts all current logits by the same scalar per hidden state, so it is softmax-invariant for the current forward pass; under Ember it can still change parameter values and adaptive moment state. This can explain part of the raw one-sided degradation.
 - The full-projector results and full-projector frequency buckets remain valid. The one-sided causal interpretation is withdrawn pending centered controls.
 - Added CENTERED_RESIDUAL_PROTOCOL.md and centered_residual_decomposition_trial.py, plus an analytic test that verifies both centered corrections sum to zero, their difference equals PG, and the uniform mode leaves current softmax probabilities unchanged.
-- **Centered residual run #44052591527 is queued/running:** 3 fresh seeds × 2 batch sizes × 8 arms, including centered/uncentered prediction-only, centered/uncentered target-only, full projector, and uniform-only plus/minus controls.
+- **Centered residual run #44052591527 completed 6/6, 48 arms.** Centered prediction-only mean CE is 6.24463/6.26007 (batch32/128); centered target-only is 6.04097/6.08003; full projector is 4.96977/5.06223; plain Ember is 5.00410/5.08187. Both centered one-sided terms lose on every seed at both batches. Uniform-only plus/minus also degrade CE (+0.096/+0.098 and +0.926/+0.931). The centered cosine is 0.969/0.957, confirming the useful correction is the difference between highly aligned terms. Full result: CENTERED_RESIDUAL_RESULTS.md.
 
 
 
@@ -236,3 +236,13 @@ Run an exact residual decomposition with fresh seeds: compare the full projector
 - Hilfiker et al. [Hil26] exact clique-graph heat-kernel limit has been verified from full text: for unequal clique sizes \(n_g\), \(H_{\tau,g}=P_g+e^{-\tau n_g/2}(I-P_g)\), and \(H_\tau\to P\). The limit score is proper but not strictly proper; finite tau is strictly proper. Resistance score uses \(L^\dagger_g=(1/n_g)(I-P_g)\).
 - Registered a head-only scalar-loss collision: P-limit score \(r^\top P r\), finite diffusion score at tau .02, and resistance score, each added to ordinary CE. Their logit gradients include \(J_{\rm softmax}\), unlike the direct projector. Protocol: [GRAPH_DIFFUSION_SCORE_PROTOCOL.md](../../research-review/01-rare-words-shared-output-vectors/GRAPH_DIFFUSION_SCORE_PROTOCOL.md).
 - Added an analytic test verifying score formulas and gradients for unequal clique sizes. Trial/workflow are registered; execution will begin after the current centered-residual and LR-sweep matrices.
+
+
+## Sixteenth continuation — centered residual mechanism validated
+
+- The full projector remains better than plain Ember at both batch sizes on all three seeds.
+- After removing U, prediction-only and target-only still lose badly at every seed and batch. The full difference wins. This supports the interaction/cancellation mechanism rather than a one-sided residual effect.
+- The uniform-only controls demonstrate that Ember's actual parameter update is not invariant to a softmax-invariant gradient mode: +U has a modest penalty; −U has a large penalty.
+- Maximum explicit-decomposition error is below 6.1e-9. The analytic test and all six CI jobs pass.
+- Full results: [CENTERED_RESIDUAL_RESULTS.md](../../research-review/01-rare-words-shared-output-vectors/CENTERED_RESIDUAL_RESULTS.md).
+
