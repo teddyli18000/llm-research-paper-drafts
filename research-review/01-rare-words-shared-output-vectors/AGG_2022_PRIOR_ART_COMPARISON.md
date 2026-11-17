@@ -26,7 +26,7 @@ The paper decomposes the output-row gradient for a rare token into three terms:
 
 The paper identifies term (b) as the main cause of embedding degeneration. It uses two frequency-dependent gate vectors to attenuate terms (b) and (c) for rare and very-rare output rows. Its equations (6)–(10) implement this through detached copies and separate logits, preserving the forward parameter values while changing the embedding-gradient path.
 
-Reported WikiText-103 results with a GPT-2-medium architecture, 260K vocabulary and up to 50K training iterations:
+Reported WikiText-103 results with a 24-layer, 1,024-hidden-dimension Transformer (358M parameters), Adam, alpha=0.03 and up to 50K training iterations. The paper's prose mentions a 260K vocabulary, while its model-configuration table reports 44,256; the table's 44,256 is the stated model vocabulary:
 
 | Metric | MLE | AGG |
 |---|---:|---:|
@@ -35,7 +35,7 @@ Reported WikiText-103 results with a GPT-2-medium architecture, 260K vocabulary 
 | Embedding isotropy I(W) | 0.377 | 0.813 |
 | Rare-token unique predictions | 91 | 345 |
 
-The paper also reports WMT14 BLEU improvements of 1.40 and 1.41 for Transformer base and big. Dynamic grouping slightly outperforms static AGG in its ablation (total PPL 15.51 vs 15.55).
+The paper also reports WMT14 BLEU improvements of 1.40 and 1.41 for Transformer base and big. Its dynamic rare-group size fluctuates substantially during the first 1,000 steps, and its static-group ablation fixes the rare group after one epoch. Dynamic grouping slightly outperforms static AGG in its ablation (total PPL 15.51 vs 15.55).
 
 ## Exact comparison with the original Paper 01 method
 
