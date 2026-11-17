@@ -70,3 +70,34 @@
 ## 研究判断
 
 **这是一条有明确方法构造与可验证机制的研究线。** 它与输出词向量共享、动态分组和压缩工作有联系；重点可放在函数保持、优化状态与稀有词信号传播三者的联合作用。成果可以发展为训练优化方法论文或长尾词学习机制论文。
+
+
+---
+
+## 6. November 17 full-text and mathematical correction
+
+The starting online shared-centroid method \(R=U+AC\), function-preserving K-means refresh, and gradient sharing are already the upstream author's method. They are not an independent novelty claim.
+
+The normalized flat-head projector
+
+\[
+P=AD^{-1}A^\top,\qquad G'=(I+\alpha P)G
+\]
+
+has an exact fixed-group SGD parameterization \(W=U+\sqrt{\alpha}AD^{-1/2}C\). Same-LR SGD produces exactly the same output-matrix update. The 25-step nonlinear test passes at 2.22e-15 maximum error. Therefore the projector is not a new SGD geometry.
+
+The closest additional mathematical prior art is Hilfiker et al. (2026), *Strictly Proper Scoring Rules for Node Selection Tasks on Graphs*. For a disjoint union of within-class cliques, its graph-diffusion heat kernel converges to the same component-mean projector \(P\) in probability coordinates. The logit gradient of that proper score still contains \(J_{\rm softmax}\), so it is not the same optimizer-side logit update. Conceptizer (2026) and Learning Concepts, Not Tokens (EMNLP 2026) are also close language-model objective neighbors: both reward concept/set probability mass, but their token gradients are probability-weighted within a concept rather than uniform class-mean residuals.
+
+### Updated empirical status
+
+- Direct projection beats the exact normalized-centroid parameterization under Ember and Adam at batch32, but is near-tied at batch128. The direct advantage is concentrated in zero/low-exposure rows. A matched LR sweep is required before attributing it to adaptive-state geometry.
+- Context groups through absolute step250, followed by online K-means, is the selected batch32 schedule candidate under the preregistered rule. Batch128 remains context-only at 100 steps.
+- Raw second-moment routing fails because it overshoots.
+- The first uncentered one-sided \(Pp\)/\(-Py\) ablation was confounded by the vocabulary-uniform mode. Centered one-sided and uniform-only controls are running.
+
+### Revised research judgment
+
+This is no longer a claim of a new dynamic class-sharing mechanism or new SGD preconditioner. The remaining candidate contribution is a practical flat-head adaptive-optimizer effect: whether direct projection produces more useful low-exposure token updates than the exact normalized-centroid parameterization, under matched LR and modern baselines.
+
+A paper-level claim requires the centered residual study, LR sweep, graph-diffusion proper-score comparison, output-only Adam epsilon, projected RowNorm/MuonIO, and validation on an untouched shard and larger model. Until those comparisons hold, the correct status is **promising narrow empirical hypothesis; novelty not yet established**.
+
