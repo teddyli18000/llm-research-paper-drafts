@@ -95,11 +95,11 @@ MuonIO uses rowwise momentum normalization for the LM head. Each token row gets 
 
 **Collision boundary:** a strong, modern LM-head optimizer baseline. It is not an algorithmic anticipation of class-mean gradient projection.
 
-### Shah (2026): Ember
+### Shah (2026): Token Geometry / Ember
 
-*Ember: A Kilobyte-State Optimizer for Token Interfaces*, arXiv:2607.01455.
+*Token Geometry*, arXiv:2607.01455 (current v4; the optimizer introduced is Ember).
 
-The official implementation stores factored second moments for token tables and no first-moment state. Its row, column and global second-moment statistics are computed from the same raw gradient used in the parameter update. The fork's experiments use the official pinned implementation.
+The paper frames Ember as a square-root empirical-Fisher preconditioner for token interfaces. It argues that rowwise gradient energy tracks token activation frequency and that the LM-head gradient admits the same factorized treatment as an embedding table. The official implementation stores factored row/column second moments for token tables and no first-moment state. Its statistics are computed from the same gradient used in the parameter update. The fork's experiments use the official pinned implementation.
 
 **Collision boundary:** a strong baseline and the adaptive denominator with which the candidate projector interacts. A projected update numerator with raw-gradient factored statistics is a new variant of Ember; it is not the published Ember algorithm.
 
@@ -159,7 +159,7 @@ These results support a **narrow normalized class-mean preconditioner hypothesis
 - Som26 RowNorm: https://doi.org/10.48550/arXiv.2608.22253
 - Symmetry-Compatible Optimizers: https://doi.org/10.48550/arXiv.2605.18106
 - Hu26 Decoupled Routing: https://doi.org/10.48550/arXiv.2604.22407
-- Ember: https://doi.org/10.48550/arXiv.2607.01455
+- Token Geometry / Ember: https://doi.org/10.48550/arXiv.2607.01455
 - MuonIO: https://arxiv.org/abs/2610.02705
 - Han26: https://arxiv.org/abs/2610.09835
 - LM-head Gradient Bottleneck: https://doi.org/10.48550/arXiv.2603.10145
