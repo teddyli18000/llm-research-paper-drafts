@@ -90,3 +90,8 @@ The six run artifacts contain the per-arm JSONL scores, exposure buckets, correc
 ## Causal-attribution correction
 
 The first one-sided decomposition used raw Pp and Py. Since both sum to the same batch hidden-state mean across vocabulary rows, they each contain the uniform component U=(1/V)1 h̄ᵀ. The full difference cancels U, but the one-sided arms do not. A uniform row update is softmax-invariant on the current batch yet can alter adaptive-optimizer state. Therefore the raw one-sided CE and bucket outcomes cannot by themselves show that both centered residual terms are essential. The follow-up explicitly compares Pp−U, Py−U, U-only plus/minus, and the full projector: [CENTERED_RESIDUAL_PROTOCOL.md](CENTERED_RESIDUAL_PROTOCOL.md), Actions #44052591527.
+
+
+## Centered follow-up result
+
+The common-mode confound has now been isolated in [CENTERED_RESIDUAL_RESULTS.md](CENTERED_RESIDUAL_RESULTS.md), Actions #44052591527. After subtracting the vocabulary-uniform component U from each one-sided term, prediction-only and target-only still lose badly on all three seeds at both batch sizes, while the full difference wins. Uniform-only plus/minus controls also degrade training, showing that Ember does not preserve the softmax-invariant direction in its actual parameter update. The centered study supports the cancellation mechanism; use it instead of the raw one-sided outcomes for causal interpretation.
