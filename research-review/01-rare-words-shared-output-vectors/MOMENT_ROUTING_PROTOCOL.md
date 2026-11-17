@@ -109,3 +109,8 @@ A batch-32-only gain is a batch-regime effect. If raw-stat routing fails this te
 ## Execution
 
 The workflow is registered on the repository default branch and runs against research/01-modern-optimizer-baselines. The protocol and analytic identity test are committed before the fresh-seed matrix. Raw logs and JSONL frequency-bucket results are archived as Actions artifacts.
+
+
+## Motivation from the completed stable-capture study
+
+The prior fresh-seed matrix (Actions #44037476138) did not meet its preregistered decision rule: mean CE for the energy gate was 4.96290 at batch 32 and 5.06120 at batch 128; eta selection was 4.96533 and 5.06033, respectively. Eta therefore loses to the energy gate at batch 32 and only differs by 0.00087 at batch 128. The next study changes the optimizer's moment pathway rather than continuing to tune the reliability score.
