@@ -210,6 +210,48 @@ The extra prediction-logit gradient is target-side \(p-\widetilde y\). The targe
 - **Group Softmax Loss [Kob21]** is a naming false friend. Its groups are feature dimensions in the penultimate representation, not vocabulary classes or output rows. It splits each class logit into ingredient logits and computes separate group-wise softmax losses; the paper explicitly distinguishes this from grouping class categories. It does not apply a class-mean projector to token-row gradients.
 - **Interclass Loss [Haq15]** is a hierarchy-distance-weighted classification loss. The accessible copy indicates target-class relationship weighting, but the full source and exact derivative were not available in this audit. Treat it as a target/loss-level neighbor, not as a ruled-out algebraic equivalent.
 
+
+
+### Graph-proper scoring rules: Hilfiker et al. (2026)
+
+*Strictly Proper Scoring Rules for Node Selection Tasks on Graphs* [Hil26] is a closer mathematical neighbor than ordinary hierarchical classification. Its diffusion score is
+
+\[
+S_{\mathrm{diff}}^\tau(p,y)=(p-y)^\top H_\tau(p-y),\qquad H_\tau=e^{-\tau L/2},
+\]
+
+with probability-coordinate gradient \(2H_\tau(p-y)\). For a graph that is a disjoint union of complete within-class cliques, the Laplacian eigenspaces split into the group-constant subspace and its within-group zero-sum complement. For equal group size \(n\),
+
+\[
+H_\tau=P+e^{-\tau n/2}(I-P),
+\]
+
+so as \(\tau\to\infty\), \(H_\tau\to P\). Thus a graph-aware proper score already produces the **same class-mean projector applied to the probability residual** in probability coordinates. The paper's resistance score on the same clique graph instead uses \(L^\dagger=(1/n)(I-P)\), the complementary within-group projector.
+
+This is a genuine and important prior-art overlap. But for a flat softmax head \(p=\operatorname{softmax}(z)\), the graph-score logit gradient is
+
+\[
+\nabla_z S_{\mathrm{diff}}^\tau
+=2J_{\mathrm{softmax}}H_\tau(p-y),
+\]
+
+whereas the candidate optimizer update is \((I+\alpha P)(p-y)\). The softmax Jacobian remains between the graph score's probability gradient and the logits; in general this is not the same operator. The distinction is exactly the nonintegrability/metric issue described below. The method is not new as a graph-propagated probability residual; its remaining claim is a logit-space/output-head preconditioner with a different chain-rule geometry.
+
+### Conceptizer and Learning Concepts, Not Tokens (2026)
+
+These are the closest modern language-model objective neighbors found.
+
+- **Conceptizer [Zhe26c]** retains the ordinary full-vocabulary token softmax, maps token probabilities through fixed token–concept memberships \(\omega_{vc}\), and defines \(p_c=\sum_v\omega_{vc}p_v\). Its concept loss is a cross-entropy over concept targets \(q_c\). The exact logit derivative is
+  \[
+  \frac{\partial \ell_{\mathrm{concept}}}{\partial z_v}
+  =p_v\sum_c q_c\frac{p_c-\omega_{vc}}{p_c+\epsilon}.
+  \]
+  With one membership per token and one target concept, this reduces to \(p_v-\mathbf1[v\in C]p_v/P_C\). It is probability-weighted within the target concept, not a uniform class-mean residual. The full method also includes token NTP and a retention KL term.
+- **Learning Concepts, Not Tokens [Zha26u]** uses contextual synonym sets \(C\) and the loss \(-\log P_C\), \(P_C=\sum_{j\in C}p_j\), mixed with standard NTP. Its implied logit gradient is \(p_j-\mathbf1[j\in C]p_j/P_C\). Again, it retains the flat softmax but renormalizes the current token probabilities within the acceptable set.
+- The existing [CONCEPT_CLASS_LOSS_COLLISION_PROTOCOL.md](CONCEPT_CLASS_LOSS_COLLISION_PROTOCOL.md) tests the single-membership set-likelihood objective \(-\log\sum_{i\in g(y)}p_i\) on the same train-only groups, with three seeds and several loss weights. That is the core one-concept version of the LCNT/Conceptizer objective, although it is not a full reproduction of their contextual synonym construction or multi-membership target \(q\).
+
+These works establish that class/concept probability mass and flat-softmax concept supervision are already active research directions. The candidate's distinguishing feature is not merely “use group probabilities”; it is the **uniform class-mean residual applied as an optimizer-side transformation to the output-head gradient**, rather than a probability-weighted set-likelihood gradient.
+
 ### Why this is not generally the gradient of another scalar loss
 
 For fixed groups, let \(P=P^\top=P^2\), \(p=\operatorname{softmax}(z)\), and
