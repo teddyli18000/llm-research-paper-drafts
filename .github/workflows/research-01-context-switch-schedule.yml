@@ -1,0 +1,59 @@
+name: Research 01 — absolute-step context-to-dynamic schedule
+on:
+  push:
+    branches:
+      - "research/01-modern-optimizer-baselines"
+    paths:
+      - ".github/workflows/research-01-context-switch-schedule.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/context_switch_schedule_trial.py"
+      - "research-review/01-rare-words-shared-output-vectors/CONTEXT_SWITCH_SCHEDULE_PROTOCOL.md"
+permissions:
+  contents: read
+jobs:
+  context_switch_schedule:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [569, 571, 577]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU scientific dependencies and pinned Ember
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "git+https://github.com/katop1234/ember.git@76f30117b2d948874cd1c965c4f6813fa9de8caa"
+      - name: Prepare original model, train-only groups and runtime
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/context_groups.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Run four matched switch schedules
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/context_switch_schedule_trial.py --seed ${{ matrix.seed }} | tee context_switch_schedule.log
+      - name: Verify all arms and token budgets
+        run: |
+          python - <<'PY'
+          import json, math
+          from pathlib import Path
+          ps = list(Path("research-lab/01-rare-words-shared-output-vectors").glob("context_switch_schedule_s*.jsonl"))
+          assert len(ps) == 1
+          rows = [json.loads(s) for s in ps[0].read_text().splitlines()]
+          assert len(rows) == 4 and len({r["tag"] for r in rows}) == 4
+          assert all(math.isfinite(r["scores"]["val"]) and r["tokens"] == 819200 for r in rows)
+          assert {r["args"]["proj_mode"] for r in rows} == {"context", "context_late"}
+          assert all(r["projected_to_raw_norm_mean"] > 0 and r["head_update_norm_mean"] > 0 for r in rows)
+          PY
+      - name: Archive scores, frequency buckets and update diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: context-switch-schedule-seed-${{ matrix.seed }}
+          path: |
+            context_switch_schedule.log
+            research-lab/01-rare-words-shared-output-vectors/context_switch_schedule_s*.jsonl
+          if-no-files-found: ignore
