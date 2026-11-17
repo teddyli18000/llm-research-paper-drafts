@@ -1,0 +1,26 @@
+name: Research 01 — pinned Ember versus v4 head-equivalence audit
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-ember-v4-audit.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/ember_v4_equivalence_test.py"
+      - "research-review/01-rare-words-shared-output-vectors/EMBER_V4_CODE_EQUIVALENCE.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dense_head_equivalence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install torch and pinned official Ember
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "git+https://github.com/katop1234/ember.git@76f30117b2d948874cd1c965c4f6813fa9de8caa"
+      - name: Check exact Oct 2026 v4 dense-head update
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/ember_v4_equivalence_test.py
