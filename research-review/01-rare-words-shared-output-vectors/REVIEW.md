@@ -49,7 +49,7 @@ P=A(A^\top A)^{-1}A^\top.
 
 第一轮 prediction-only / target-only residual 分解使用了未中心化的 \(Pp\) 和 \(-Py\)。两者包含相反的 vocabulary-uniform 模式，完整差分会抵消它。该模式不改变当前 softmax，但可能影响 Ember 状态。因此第一轮单侧 CE 不能证明两个中心化残差缺一不可。
 
-[中心化 residual follow-up](CENTERED_RESIDUAL_PROTOCOL.md) 正在运行，包含 centered/uncentered 单侧项、full projector 和 uniform-only 正负控制。完整投影结果不受这个问题影响。
+[中心化 residual follow-up](CENTERED_RESIDUAL_RESULTS.md) 已完成（Actions #44052591527）。中心化 prediction-only/target-only 仍然显著差于 full projector；uniform-only 控制也明显退化。两项高度相关的残差必须通过差分形成有用更新。完整投影结果不受初始混杂问题影响。
 
 ## 当前创新性判断
 
