@@ -90,7 +90,7 @@ def main():''',
         '    t0 = time.time(); X = torch.tensor(rows).to(D)',
     ),
     (
-        '    res = dict(tag=a.tag, args=vars(a), tokens=need',
+        '    res = dict(regroup_records=regroup_records, tag=a.tag, args=vars(a), tokens=need',
         '    res = dict(projected_to_raw_norm_mean=(projected_norm_sum / projected_norm_count if projected_norm_count else None), '
         'head_update_norm_mean=(head_update_norm_sum / a.steps), tag=a.tag, args=vars(a), tokens=need',
     ),
