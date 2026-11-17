@@ -25,7 +25,7 @@ Neither component reproduces the result:
 - Target-only is worse by +1.08763 and +0.95370; all three paired seeds agree.
 - The matched group-label smoothing arm is worse by +0.54233 and +0.52237.
 
-The result supports an **interaction between prediction-side and target-side class residuals**. It does not support either term as an independently useful update.
+The uncentered raw one-sided arms are much worse than the full projector, but this does **not yet establish that both centered terms are necessary**. Each raw term contains a vocabulary-uniform component that the full difference cancels. That component leaves the current softmax unchanged but can alter Ember's parameter and moment state. The centered causal ablation is now registered in CENTERED_RESIDUAL_PROTOCOL.md and running as Actions #44052591527.
 
 ## Geometry of the two terms
 
@@ -43,7 +43,7 @@ The measured mean norms and cosine between the two corrections are:
 | \(\|Py\,h^\top\|_F\), mean per-step norm | 0.06933 | 0.11425 |
 | Cosine, mean per-step | 0.96948 | 0.95703 |
 
-The terms have similar magnitudes and are strongly aligned. Applying either one alone introduces a large coherent shift. Their difference is much smaller and retains the class-level prediction-versus-target discrepancy. The full projector is therefore not “prediction smoothing” or “target smoothing”; its useful signal is the **difference between the two projected masses**.
+The raw terms have similar magnitudes and are strongly aligned. Their difference is the full class residual. However, the raw one-sided arms also contain opposite vocabulary-uniform modes. The centered follow-up separates these modes before attributing the one-sided training outcomes to the class residual itself.
 
 The direct matrix projection and the explicit decomposition agree to maximum absolute error below \(1.6\times10^{-8}\) in the analytic identity test and below \(2\times10^{-5}\) at every training step. All six CI jobs passed this assertion.
 
@@ -72,7 +72,7 @@ Validation target mass is heavily concentrated outside the zero-exposure bucket:
 | 3k+ | 2.8488 | 2.8447 | 2.9542 | 2.9558 |
 | Unknown | 1.6960 | 1.6867 | 1.7095 | 1.7140 |
 
-The prediction-only arm improves zero-exposure tokens but degrades most other buckets. The target-only arm also improves zero-exposure tokens while severely worsening the common/unknown tail, especially the unknown bucket. The full difference avoids these one-sided distortions.
+The uncentered prediction-only and target-only bucket patterns are exploratory because they include the uniform mode. The full-projector bucket results remain valid; causal interpretation of the one-sided buckets awaits the centered follow-up.
 
 ## Interpretation and novelty boundary
 
@@ -85,3 +85,8 @@ The prediction-only arm improves zero-exposure tokens but degrades most other bu
 ## Raw evidence
 
 The six run artifacts contain the per-arm JSONL scores, exposure buckets, correction norms, cosine and decomposition error. See Actions run #44046155032.
+
+
+## Causal-attribution correction
+
+The first one-sided decomposition used raw Pp and Py. Since both sum to the same batch hidden-state mean across vocabulary rows, they each contain the uniform component U=(1/V)1 h̄ᵀ. The full difference cancels U, but the one-sided arms do not. A uniform row update is softmax-invariant on the current batch yet can alter adaptive-optimizer state. Therefore the raw one-sided CE and bucket outcomes cannot by themselves show that both centered residual terms are essential. The follow-up explicitly compares Pp−U, Py−U, U-only plus/minus, and the full projector: [CENTERED_RESIDUAL_PROTOCOL.md](CENTERED_RESIDUAL_PROTOCOL.md), Actions #44052591527.
