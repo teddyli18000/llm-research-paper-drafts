@@ -51,9 +51,6 @@ patches = [
     return sums[assignment] / counts[assignment, None]
 
 
-_original_ember_update = ember.ember_update
-
-
 def main():''',
     ),
     (
