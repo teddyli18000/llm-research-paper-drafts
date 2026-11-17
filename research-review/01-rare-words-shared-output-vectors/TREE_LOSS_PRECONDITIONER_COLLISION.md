@@ -38,3 +38,22 @@ A standalone methods paper based only on the projector equation and 6.5M-paramet
 ## Test
 
 Verify `B²=I+αP` and induced SGD step equality for unequal cluster sizes and zero-sum output gradients. The companion deterministic unit test in the independent research folder is a mathematical identity test, not training evidence.
+
+
+## Exact normalized shared-centroid form
+
+The same update also has a direct normalized-centroid realization. With \(D=A^\top A\),
+
+\[
+W=U+\sqrt{\alpha}AD^{-1/2}C.
+\]
+
+Its parameter gradients are \(G\) and \(\sqrt{\alpha}D^{-1/2}A^\top G\). Updating both parameter blocks with the same SGD learning rate gives exactly
+
+\[
+\Delta W=-\eta(I+\alpha AD^{-1}A^\top)G.
+\]
+
+This makes the connection to shared-parameter class models even more explicit: the projector is the flat-head expression of a size-normalized shared-centroid update. It is not a new SGD geometry. The unresolved question is whether the direct flat-head implementation is practically better under adaptive optimizers, where Ember/Adam state is maintained in different coordinates.
+
+The new matched experiment [NORMALIZED_CENTROID_ADAPTIVE_RESULTS.md](NORMALIZED_CENTROID_ADAPTIVE_RESULTS.md) finds a direct-projector advantage at batch32 but a near-tie at batch128; the head-LR sweep is preregistered.
