@@ -48,9 +48,13 @@ For adaptive Ember or Adam, gradient preconditioning in the flat W coordinates a
 - **Publishability:** sufficiently reproducible for a focused technical note / workshop contribution on optimizer-coordinate effects and rare-token output learning. **Not yet strong enough for an ICML/NeurIPS/ICLR main-track algorithm paper**: near-tie with the upstream invention on independently held-out tokens, no realistic large-backbone test, limited batch transfer, and modern strong optimizer controls incompletely explored.
 - **Efficient next decision:** do not keep accumulating more V6k ablations of the same projection. Only a real >100M contextual backbone pretraining test, comprehensive tuned head-optimizer comparison (including input/output tying and AGG) and statistically meaningful extra advantage over original centroids could change the publication tier. Otherwise position this as a rigorous independent empirical extension with attribution rather than a foundational optimizer innovation.
 
-## Near-final task
+## Last decisive collision study — completed
 
-A preregistered [graph-diffusion score collision](GRAPH_DIFFUSION_SCORE_PROTOCOL.md) started in [Actions #44090597865](https://github.com/teddyli18000/llm-research-paper-drafts/actions/runs/44090597865). Its proper quadratic score supplies `2J_softmax H(p-y)`, not direct `2H(p-y)`; this is a mathematically closest loss-level control, but a **single λ=1 coefficient cannot establish that all scalar graph-loss choices fail**. Incorporate all jobs' original results after completion.
+Preregistered [graph-diffusion score collision, Actions #44090597865](https://github.com/teddyli18000/llm-research-paper-drafts/actions/runs/44090597865) completed **6/6 success, 30 unique trainings, 3 seeds per batch**. Direct projector + Ember obtained mean **4.96403/5.06163 CE** at batch32/128 versus plain Ember **5.00017/5.07983**; fixed-λ=1 P-limit, diffusion and resistance auxiliary losses all remained within approximately 0.0013 CE of plain Ember. Full [original-log analysis](GRAPH_DIFFUSION_SCORE_RESULTS.md).
+
+**Interpretation boundary:** the scalar graph score ordinarily backpropagates `2J_softmax P(p−y)` while direct projection adds `2P(p−y)`. At λ=1, the score gradient can be attenuated by J, so the failure of the fixed-coefficient losses **is not a proof of a universal advantage over optimally scaled losses**. Moreover, we established the exact single-prediction Fisher identity `J_softmax⁺ ∇_z S_P=2P(p−y)`, putting the algorithm's class residual in the natural-gradient family. The precise independent contribution is still the practical flat-head application before a modern adaptive optimizer, not a novel mathematical scoring primitive. See [derivation](GRAPH_SCORE_FISHER_GEOMETRY.md).
+
+**Research evidence collection and paper-feasibility judgment for this stage are closed.** There are no incomplete critical 01 experiments in this handoff; the evidence does not clear the standard for a major-conference methods claim.
 
 ## Science and source-use notes
 
