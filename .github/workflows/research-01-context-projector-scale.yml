@@ -1,0 +1,64 @@
+name: Research 01 — independent static context-projector scale comparison
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-context-projector-scale.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/contextual_projector_transfer.py"
+      - "research-review/01-rare-words-shared-output-vectors/CONTEXTUAL_PROJECTOR_TRANSFER_PROTOCOL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contextual_projector:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 170
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [181, 191, 197]
+        scale: [16000, 50258]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install scientific stack and pinned official Ember
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "git+https://github.com/katop1234/ember.git@76f30117b2d948874cd1c965c4f6813fa9de8caa"
+      - name: Prepare public text and original LM
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Generate train-only static semantic groups and record cost
+        run: |
+          if [ "${{ matrix.scale }}" = "16000" ]; then
+            python -u research-lab/01-rare-words-shared-output-vectors/context_groups_16000.py | tee context_prep.log
+          else
+            python -u research-lab/01-rare-words-shared-output-vectors/context_groups_50258.py | tee context_prep.log
+          fi
+      - name: Compare five same-optimizer group geometries
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/contextual_projector_transfer.py --seed ${{ matrix.seed }} --scale ${{ matrix.scale }} | tee context_projector.log
+      - name: Validate complete data
+        run: |
+          python - <<'PY'
+          import json,math
+          from pathlib import Path
+          files=list(Path("research-lab/01-rare-words-shared-output-vectors").glob("context_proj_V*_s*.jsonl"))
+          assert len(files)==1
+          rows=[json.loads(x) for x in files[0].read_text().splitlines()]
+          assert len(rows)==5 and len(set(r["tag"] for r in rows))==5
+          assert all(math.isfinite(r["scores"]["val"]) for r in rows)
+          PY
+      - name: Archive per-arm scores and context preprocessing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: context-proj-V${{ matrix.scale }}-seed${{ matrix.seed }}
+          path: |
+            context_prep.log
+            context_projector.log
+            research-lab/01-rare-words-shared-output-vectors/context_proj_V*_s*.jsonl
+          if-no-files-found: ignore
