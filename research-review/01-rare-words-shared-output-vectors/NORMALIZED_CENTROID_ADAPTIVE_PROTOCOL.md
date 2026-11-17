@@ -60,3 +60,8 @@ The direct and factorized arms use exactly the same fixed assignment matrix \(A\
 ## Execution
 
 The experiment uses one fixed train-only assignment per matched seed/batch. Raw logs and JSONL results are archived as Actions artifacts.
+
+
+## Result
+
+The matrix completed in Actions #44051580714. Direct projection beats the exact normalized-centroid parameterization on all three seeds at batch32 under both Ember and Adam; at batch128 the paired differences are small and seed-inconsistent. See NORMALIZED_CENTROID_ADAPTIVE_RESULTS.md. A matched head-LR sweep is the next test before interpreting this as an optimizer-state effect.
