@@ -188,3 +188,13 @@ Run an exact residual decomposition with fresh seeds: compare the full projector
 - Preregistered a direct-projector versus normalized-centroid comparison under Ember and Adam: [NORMALIZED_CENTROID_ADAPTIVE_PROTOCOL.md](../../research-review/01-rare-words-shared-output-vectors/NORMALIZED_CENTROID_ADAPTIVE_PROTOCOL.md). Trial runner is normalized_centroid_adaptive_trial.py; workflow registration remains to be added after the current switch-schedule run finishes.
 - This changes the novelty boundary: the fixed-group SGD update geometry itself is not new. The empirical question is whether a direct flat-head update has a useful practical/adaptive-optimizer advantage over the exact scaled-centroid parameterization, and whether evolving semantic groups add value.
 
+
+
+## Eleventh continuation — absolute-step switch schedule completed
+
+- **Context-switch schedule #44050503629 completed 3/3.** Four arms per seed, 12 runs, 819,200 tokens each. Full results: [CONTEXT_SWITCH_SCHEDULE_RESULTS.md](../../research-review/01-rare-words-shared-output-vectors/CONTEXT_SWITCH_SCHEDULE_RESULTS.md).
+- Fixed context mean CE 4.97100. Step150 4.96650; step200 4.96627; step250 4.96667. All three switch thresholds beat fixed context on every seed.
+- The preregistered rule says thresholds within 0.002 CE should prefer the later switch. All three are within 0.00040, so **step250 is selected**, even though step200 has the smallest raw mean. This preserves context groups longer.
+- Step250's bucket profile improves zero-exposure and 1–31 exposure, 3k+ and unknown; the 32–999 bands regress slightly. The schedule gain is small but seed-consistent and is not uniform across frequency.
+- Batch128 remains fixed context because its 100-step horizon never reaches step250.
+
