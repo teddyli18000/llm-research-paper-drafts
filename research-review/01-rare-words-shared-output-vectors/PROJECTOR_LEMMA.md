@@ -35,3 +35,19 @@ The online version learns `A_t` by K-means on current LM-head output rows; no ad
 Centered softmax update geometry has a recent 2026 precedent: [Toward a First-Principles Update Geometry for the Language-Model Head](https://arxiv.org/abs/2608.22253) proves softmax-invariant update geometry and uses centered row normalization; its algorithm **does not** use learned word clusters or a token-cluster projector. The centering itself is not novel; the question is whether *dynamically learned semantic subspaces of token rows* improve sample efficiency while keeping the update compatible with that geometry.
 
 Our [original direct AAᵀ gradient experiment](GRADIENT_KERNEL_AND_SEMANTIC_HYBRID.md) got ~0.015 CE improvement at α=0.01 on a small LM. The [normalized projector sweep](https://github.com/teddyli18000/llm-research-paper-drafts/actions/runs/43852372143) is testing α=0.25,0.5,1,2,4 on three seeds. **The lemma is proven; usefulness of the new preconditioner must come from the experimental results.**
+
+
+## Exact parameterization and prior-art correction (November 17)
+
+For fixed groups, the normalized update is exactly reproduced under SGD by
+
+\[
+W=U+\sqrt{\alpha}AD^{-1/2}C.
+\]
+
+The output gradient is \(G\); the centroid gradient is \(\sqrt{\alpha}D^{-1/2}A^\top G\). Same-LR SGD on both parameters therefore induces \(-\eta(I+\alpha P)G\). This is a normalized shared-centroid parameterization, so the projector is not a new SGD geometry. The direct flat-head form is an implementation choice whose value must be established under adaptive optimizers.
+
+A second adjacent result is graph-diffusion proper scoring: for disjoint complete class cliques, the heat kernel converges to the same group-mean projector in probability coordinates. Its logit gradient still includes \(J_{\mathrm{softmax}}\), unlike direct optimizer-side projection.
+
+Current evidence: direct projector beats the exact normalized-centroid parameterization at batch32 under Ember and Adam, but is near-tied at batch128. A matched head-LR sweep is required before attributing the difference to optimizer-state geometry. The one-sided residual ablation is being rerun with the vocabulary-uniform mode removed.
+
