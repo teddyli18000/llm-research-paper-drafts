@@ -280,11 +280,11 @@ These results support a **narrow normalized class-mean preconditioner hypothesis
 
 ## Required next comparisons
 
-1. Finish the preregistered raw-second-moment routing study. The general routing principle is Hu et al.'s; only an empirical LM-head/Ember adaptation can be claimed.
-2. Add output-only epsilon \(10^{-4}\) from Han et al. as a rare/absent-row baseline, with per-exposure buckets.
-3. Add a faithful projected RowNorm baseline from Somasundaram et al. and a MuonIO baseline at V≈50k.
-4. The prediction/target residual decomposition is complete; retain the full interaction as the mechanism hypothesis and test the absolute-step regrouping schedule.
-5. Test on an untouched shard and at a substantially larger model before writing a general LM-pretraining claim.
+1. Finish the preregistered direct-projector versus exact normalized-centroid parameterization comparison under Ember and Adam. The fixed-group SGD equivalence is already exact; the remaining question is adaptive-optimizer behavior.
+2. Retain context groups through absolute step 250 before switching to online output-row K-means for the batch32 schedule candidate. Batch128 remains fixed context at the tested 100-step horizon.
+3. Add output-only Adam epsilon 1e-4 from Han et al., a faithful projected RowNorm baseline from Somasundaram et al., and MuonIO at V≈50k, with per-exposure buckets.
+4. Obtain full text for CluOReg [Mei23] and the exact metric-augmentation/class-relationship neighbors that remain unresolved; the Inan & Khosravi paper has now been read in full and is a target-similarity loss, not a projector.
+5. Test the surviving mechanism on an untouched shard and at a substantially larger model before making a general LM-pretraining claim.
 
 ## Bibliographic links
 
