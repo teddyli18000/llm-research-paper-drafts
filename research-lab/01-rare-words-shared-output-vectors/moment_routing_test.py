@@ -8,12 +8,11 @@ def project(g, groups, k):
     return sums[groups] / counts[groups, None]
 
 
-def factored_second_moment(g, beta2=0.95, steps=1):
+def factored_second_moment(g):
     row = g.square().mean(dim=1)
     col = g.square().sum(dim=0) / g.shape[0]
     total = g.square().mean()
-    bc = 1 - beta2 ** steps
-    return row / bc, col / bc, total / bc
+    return row, col, total
 
 
 torch.manual_seed(5201)
