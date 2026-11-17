@@ -6,7 +6,6 @@ on:
     paths:
       - "research-lab/01-rare-words-shared-output-vectors/moment_routing_trial.py"
       - "research-lab/01-rare-words-shared-output-vectors/moment_routing_test.py"
-      - "research-review/01-rare-words-shared-output-vectors/MOMENT_ROUTING_PROTOCOL.md"
   workflow_dispatch:
 permissions:
   contents: read
