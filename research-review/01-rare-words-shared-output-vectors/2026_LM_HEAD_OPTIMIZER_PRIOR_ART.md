@@ -192,6 +192,19 @@ The extra prediction-logit gradient is target-side \(p-\widetilde y\). The targe
 - **Heavy-Tailed Class Imbalance [Kun24] and Rare-Token Fixed Points [Kar26b]:** explain optimizer/frequency effects that can alter rare-token learning without any class projector. They motivate matched optimizer controls and frequency-stratified reporting.
 - **LightRNN [Li16], VQ-Logits [Sha25], and Self-organized Hierarchical Softmax [She17]:** share output parameters or cluster the vocabulary, but replace/factorize the flat output distribution. VQ-Logits aggregates token-logit gradients into shared codebook vectors; LightRNN uses separate row/column softmaxes; Self-organized Hierarchical Softmax uses cluster then within-cluster softmax. None retains an independent full token row and adds a normalized class-mean residual to it.
 
+
+
+### Further optimizer and class-output neighbors
+
+- **Structured Fisher / Alice [Gon25].** RACS uses a Kronecker structure with diagonal scaling along matrix rows and columns. Alice learns a low-rank gradient subspace \(U\) and uses \(UU^\top\)-type projection plus a complement-space correction. The projector form is a genuine mathematical neighbor: if Alice's \(U\) spans the membership subspace \(\operatorname{col}(A)\), then \(UU^\top=P\). But Alice estimates its subspace from gradient-covariance information; it does not define vocabulary classes, use class means, or isolate the prediction-minus-target residual by token group. This is important prior art for generic subspace preconditioning, not an exact algorithmic anticipation.
+- **Gradient starvation [Omo26].** The paper studies rank-limited parameter-gradient subspaces in low-rank LM pretraining and intervenes with gradient truncation / subspace refresh. It does not project the softmax residual into token classes; the mechanism is restricted parameterization and available update directions, not class-row averaging.
+- **VQ-Logits [Sha25].** For each code \(c\), its shared codebook gradient aggregates \(\sum_{i:M(i)=c}(p_i-y_i)h\). This is close to the unnormalized class-sum component \(A^\top G\), but VQ-Logits replaces independent token output rows with shared codebook vectors and scatters code logits back to the vocabulary. It does not retain a full untied head and add the normalized mean projector \(AD^{-1}A^\top G\).
+- **LightRNN [Li16]** and class-based RNNLM output layers [Shi13, Bot15, Le11] factorize the output distribution into row/column or class/within-class probabilities. They change the output normalization and parameterization; they are not flat-softmax gradient projectors.
+- **Self-organized Hierarchical Softmax [She17]** learns clusters online but uses a cluster softmax followed by a within-cluster word softmax. The grouping is dynamic, but the full softmax is replaced rather than augmented with a projector.
+- **Urb24** and **Iye26** are the closest loss-level class-probability objectives found in this pass. Their exact derivatives are probability-weighted and target-conditioned; neither broadcasts a constant class-mean residual to each member row.
+- **Inan & Khosravi [Ina16b]** is the closest language-model target-similarity objective: it uses \(\\widetilde y=\\mathrm{softmax}(L^\\top L y)\) and adds \(D_{KL}(\\widetilde y\\Vert p)\) to ordinary CE. This is a tied-embedding soft-target loss, not a prediction-side class projector.
+- **Mei23** remains unresolved at equation level because its full text was unavailable. Its abstract explicitly describes cluster-derived classwise soft targets, so it remains the closest unverified cluster/target reference.
+
 ### Why this is not generally the gradient of another scalar loss
 
 For fixed groups, let \(P=P^\top=P^2\), \(p=\operatorname{softmax}(z)\), and
@@ -245,3 +258,16 @@ These results support a **narrow normalized class-mean preconditioner hypothesis
 - MuonIO: https://arxiv.org/abs/2610.02705
 - Han26: https://arxiv.org/abs/2610.09835
 - LM-head Gradient Bottleneck: https://doi.org/10.48550/arXiv.2603.10145
+
+- Superclass scoring rule: https://doi.org/10.1007/978-3-031-70359-1_15
+- Concept-Level Training: https://doi.org/10.48550/arXiv.2601.11791
+- Inan & Khosravi: https://cs224d.stanford.edu/reports/InanKhosravi.pdf
+- Cluster-based soft targets: https://doi.org/10.1109/TNNLS.2023.3262267
+- LightRNN: https://doi.org/10.48550/arXiv.1610.09893
+- VQ-Logits: https://doi.org/10.48550/arXiv.2505.10202
+- Self-organized Hierarchical Softmax: https://doi.org/10.48550/arXiv.1707.08588
+- Structured Fisher / Alice: https://doi.org/10.48550/arXiv.2502.07752
+- Gradient Starvation: https://doi.org/10.18653/2026.emnlp-main.360
+- Coupled Adam: https://doi.org/10.48550/arXiv.2502.08441
+- Heavy-Tailed Class Imbalance: https://doi.org/10.48550/arXiv.2402.19449
+- Label-similarity Curriculum Learning: https://doi.org/10.48550/arXiv.1911.06902
