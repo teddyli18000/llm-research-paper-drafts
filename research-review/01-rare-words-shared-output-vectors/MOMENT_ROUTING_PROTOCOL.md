@@ -114,3 +114,5 @@ The workflow is registered on the repository default branch and runs against res
 ## Motivation from the completed stable-capture study
 
 The prior fresh-seed matrix (Actions #44037476138) did not meet its preregistered decision rule: mean CE for the energy gate was 4.96290 at batch 32 and 5.06120 at batch 128; eta selection was 4.96533 and 5.06033, respectively. Eta therefore loses to the energy gate at batch 32 and only differs by 0.00087 at batch 128. The next study changes the optimizer's moment pathway rather than continuing to tune the reliability score.
+
+The registered Actions launcher is the existing research workflow path `.github/workflows/research-01-stable-capture.yml`, now dedicated to this moment-routing matrix.
