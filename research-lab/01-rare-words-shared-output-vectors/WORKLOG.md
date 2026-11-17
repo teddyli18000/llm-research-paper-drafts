@@ -246,3 +246,8 @@ Run an exact residual decomposition with fresh seeds: compare the full projector
 - Maximum explicit-decomposition error is below 6.1e-9. The analytic test and all six CI jobs pass.
 - Full results: [CENTERED_RESIDUAL_RESULTS.md](../../research-review/01-rare-words-shared-output-vectors/CENTERED_RESIDUAL_RESULTS.md).
 
+
+
+## Seventeenth continuation — matched head-LR sweep running
+
+- The preregistered 0.025/0.05/0.10 head-LR sweep has started as [Actions #44055310959](https://github.com/teddyli18000/llm-research-paper-drafts/actions/runs/44055310959): three fresh seeds × two batch sizes × twelve arms per job. It compares direct projection and exact normalized-centroid parameterization under Ember and Adam.
