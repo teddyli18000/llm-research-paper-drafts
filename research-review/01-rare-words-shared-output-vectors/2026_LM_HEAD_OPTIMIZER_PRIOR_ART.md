@@ -223,6 +223,43 @@ J_{\mathrm{softmax}}=\operatorname{diag}(p)-pp^\top.
 
 A vector field that is the gradient of a twice-differentiable scalar loss must have a symmetric Jacobian. Here this requires \(PJ_{\mathrm{softmax}}=J_{\mathrm{softmax}}P\), which does not hold for generic nonuniform probabilities within groups. For example, with \(p=(0.55,0.25,0.15,0.05)\), groups \(\{1,2\},\{3,4\}\), and \(\alpha=2\), the Frobenius norm of \(J_g-J_g^\top\) is \(0.2\). Thus the candidate is naturally an optimizer-side preconditioned gradient, not generally the gradient of a conventional scalar loss. It remains a positive-definite preconditioner because \(I+\alpha P\) has eigenvalues \(1\) and \(1+\alpha\) for \(\alpha>-1\).
 
+
+
+### Exact normalized-centroid reparameterization collision under SGD
+
+There is an exact fixed-partition parameterization corresponding to the proposed normalized projector, stronger than the unnormalized \(R=U+AC\) baseline.
+
+Let \(D=A^\top A\) and define
+
+\[
+W=U+\sqrt{\alpha}\,A D^{-1/2}C.
+\]
+
+For a loss with \(G=\nabla_W L\),
+
+\[
+\nabla_U L=G,\qquad
+\nabla_C L=\sqrt{\alpha}\,D^{-1/2}A^\top G.
+\]
+
+If \(U\) and \(C\) are both updated by ordinary SGD with the same learning rate \(\eta\), then
+
+\[
+\begin{aligned}
+W^+
+&=U-\eta G+\sqrt{\alpha}AD^{-1/2}
+  \left(C-\eta\sqrt{\alpha}D^{-1/2}A^\top G\right)\\
+&=W-\eta\left(I+\alpha AD^{-1}A^\top\right)G\\
+&=W-\eta(I+\alpha P)G.
+\end{aligned}
+\]
+
+Thus, for fixed groups, the candidate projector and a normalized shared-centroid parameterization produce **exactly the same output-matrix trajectory under SGD**, assuming the same learning rate for the residual and centroid parameters. This is not merely a loose analogy to Tree Loss. The original \(U+AC\) parameterization induces the unnormalized \(AA^\top\) term; scaling the centroid basis by \(D^{-1/2}\) gives the normalized projector exactly.
+
+This moves the research question. The abstract operation \(I+\alpha P\) is not a new SGD update geometry: it is a fixed shared-centroid reparameterization written directly as an optimizer update. The empirical contribution, if any, must lie in the practical flat-head implementation, its interaction with adaptive optimizers (Ember/Adam), the use of train-only or evolving token groups, and the resulting frequency-resolved behavior. A matched \(D^{-1/2}\)-scaled centroid+Ember control is therefore required; the existing unnormalized centroid baseline is not sufficient.
+
+For changing groups, the same equivalence holds within each interval of fixed \(A\). At a regrouping boundary, the parameterized representation must be recentered to preserve \(W\) before continuing. Adaptive optimizers are not invariant to this coordinate change because their moment states are maintained separately for \(U\) and \(C\); that is precisely the remaining empirical question.
+
 ## What the fork's evidence currently supports
 
 - The flat-head projector improves over plain Ember at V≈50k on the independent seeds tested, but is essentially tied with the upstream shared-centroid method and centroid+Adam.
