@@ -1,4 +1,4 @@
-"""Verify centered class residuals remove the softmax-invariant vocabulary-uniform mode."""
+"""Verify centered class residuals remove the softmax-invariant vocabulary-uniform mode before training."""
 import torch
 import torch.nn.functional as F
 
