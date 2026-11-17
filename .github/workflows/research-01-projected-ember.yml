@@ -1,0 +1,55 @@
+name: Research 01 — projected class-gradient Ember pilot
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-projected-ember.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/ember_projector_pilot.py"
+      - "research-review/01-rare-words-shared-output-vectors/PROJECTED_EMBER_PROTOCOL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  projected_ember:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [211, 307, 401]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU and pinned official Ember
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "git+https://github.com/katop1234/ember.git@76f30117b2d948874cd1c965c4f6813fa9de8caa"
+      - name: Build original LM and train data
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Five paired Ember/class-projection training arms
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/ember_projector_pilot.py --seed ${{ matrix.seed }} | tee projected_ember.log
+      - name: Verify complete raw outcomes
+        run: |
+          python - <<'PY'
+          import json,math
+          from pathlib import Path
+          paths=list(Path("research-lab/01-rare-words-shared-output-vectors").glob("ember_projector_seed*.jsonl"))
+          assert len(paths)==1
+          rows=[json.loads(x) for x in paths[0].read_text().splitlines()]
+          assert len(rows)==5 and len({x["tag"] for x in rows})==5
+          assert all(math.isfinite(x["scores"]["val"]) for x in rows)
+          PY
+      - name: Archive all loss and token-bin metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: projected-ember-seed${{ matrix.seed }}
+          path: |
+            projected_ember.log
+            research-lab/01-rare-words-shared-output-vectors/ember_projector_seed*.jsonl
+          if-no-files-found: ignore
