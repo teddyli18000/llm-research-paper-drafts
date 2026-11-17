@@ -356,3 +356,6 @@ These results support a **narrow normalized class-mean preconditioner hypothesis
 - Heavy-Tailed Class Imbalance: https://doi.org/10.48550/arXiv.2402.19449
 - Label-similarity Curriculum Learning: https://doi.org/10.48550/arXiv.1911.06902
 - Group Softmax Loss: https://doi.org/10.1109/WACV48630.2021.00266
+- Graph-proper scoring rules: https://arxiv.org/abs/2611.03274
+- Conceptizer: https://arxiv.org/abs/2606.07843
+- Learning Concepts, Not Tokens: https://aclanthology.org/2026.eacl-short.34/
