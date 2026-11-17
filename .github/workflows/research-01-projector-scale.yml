@@ -1,0 +1,56 @@
+name: Research 01 — projected Ember independent-seed scale confirmation
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-projector-scale.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/projector_scale_confirmation.py"
+      - "research-review/01-rare-words-shared-output-vectors/PROJECTOR_SCALE_CONFIRMATION_PROTOCOL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  projector_scale:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [137, 149, 163]
+        scale: [16000, 50258]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install torch and official Ember
+        run: |
+          python -m pip install numpy huggingface_hub
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "git+https://github.com/katop1234/ember.git@76f30117b2d948874cd1c965c4f6813fa9de8caa"
+      - name: Build public corpus and upstream instrumented model
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Compare official Ember, upstream centroids and class projector
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/projector_scale_confirmation.py --seed ${{ matrix.seed }} --scale ${{ matrix.scale }} | tee projector_scale.log
+      - name: Verify four nonmissing trained outcomes
+        run: |
+          python - <<'PY'
+          import json, math
+          from pathlib import Path
+          paths=list(Path("research-lab/01-rare-words-shared-output-vectors").glob("projector_scale_V*_s*.jsonl"))
+          assert len(paths)==1
+          rows=[json.loads(s) for s in paths[0].read_text().splitlines()]
+          assert len(rows)==4 and len(set(r["tag"] for r in rows))==4
+          assert all(math.isfinite(r["scores"]["val"]) for r in rows)
+          PY
+      - name: Save loss bins and timing for all conditions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: projector-scale-V${{ matrix.scale }}-seed${{ matrix.seed }}
+          path: |
+            projector_scale.log
+            research-lab/01-rare-words-shared-output-vectors/projector_scale_V*_s*.jsonl
+          if-no-files-found: ignore
