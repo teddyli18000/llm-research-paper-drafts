@@ -6,7 +6,6 @@ on:
     paths:
       - ".github/workflows/research-01-context-switch-schedule.yml"
       - "research-lab/01-rare-words-shared-output-vectors/context_switch_schedule_trial.py"
-      - "research-review/01-rare-words-shared-output-vectors/CONTEXT_SWITCH_SCHEDULE_PROTOCOL.md"
 permissions:
   contents: read
 jobs:
