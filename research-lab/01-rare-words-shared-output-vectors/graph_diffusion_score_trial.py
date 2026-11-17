@@ -69,7 +69,7 @@ patches = [
     (
         '    if a.coupled:\n        groups = [g for g in groups if g["params"][0] is not m.head]; opts.append(CoupledAdam([m.head], a.hlr))',
         '    groups = [g for g in groups if g["params"][0] is not m.head]\n'
-        '    opts.append(Ember([m.head], lr=a.hlr, beta2=0.95, eps=1e-8)\n'
+        '    opts.append(Ember([m.head], lr=a.hlr, beta2=0.95, eps=1e-8))\n'
         '    if a.coupled:\n'
         '        groups = [g for g in groups if g["params"][0] is not m.head]; opts.append(CoupledAdam([m.head], a.hlr))',
     ),
