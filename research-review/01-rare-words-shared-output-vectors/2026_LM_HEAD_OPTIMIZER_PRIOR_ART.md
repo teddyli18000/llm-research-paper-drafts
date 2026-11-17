@@ -205,6 +205,11 @@ The extra prediction-logit gradient is target-side \(p-\widetilde y\). The targe
 - **Inan & Khosravi [Ina16b]** is the closest language-model target-similarity objective: it uses \(\\widetilde y=\\mathrm{softmax}(L^\\top L y)\) and adds \(D_{KL}(\\widetilde y\\Vert p)\) to ordinary CE. This is a tied-embedding soft-target loss, not a prediction-side class projector.
 - **Mei23** remains unresolved at equation level because its full text was unavailable. Its abstract explicitly describes cluster-derived classwise soft targets, so it remains the closest unverified cluster/target reference.
 
+
+
+- **Group Softmax Loss [Kob21]** is a naming false friend. Its groups are feature dimensions in the penultimate representation, not vocabulary classes or output rows. It splits each class logit into ingredient logits and computes separate group-wise softmax losses; the paper explicitly distinguishes this from grouping class categories. It does not apply a class-mean projector to token-row gradients.
+- **Interclass Loss [Haq15]** is a hierarchy-distance-weighted classification loss. The accessible copy indicates target-class relationship weighting, but the full source and exact derivative were not available in this audit. Treat it as a target/loss-level neighbor, not as a ruled-out algebraic equivalent.
+
 ### Why this is not generally the gradient of another scalar loss
 
 For fixed groups, let \(P=P^\top=P^2\), \(p=\operatorname{softmax}(z)\), and
@@ -308,3 +313,4 @@ These results support a **narrow normalized class-mean preconditioner hypothesis
 - Coupled Adam: https://doi.org/10.48550/arXiv.2502.08441
 - Heavy-Tailed Class Imbalance: https://doi.org/10.48550/arXiv.2402.19449
 - Label-similarity Curriculum Learning: https://doi.org/10.48550/arXiv.1911.06902
+- Group Softmax Loss: https://doi.org/10.1109/WACV48630.2021.00266
