@@ -54,7 +54,7 @@ for name, init in (
 rows = [json.loads(x) for x in out.read_text().splitlines()]
 assert len(rows) == 3 and len({x["tag"] for x in rows}) == 3
 assert all(math.isfinite(x["scores"]["val"]) for x in rows)
-vals = {row["tag"].removeprefix("semantic_").split("_s")[0]: row["scores"]["val"] for row in rows}
+vals = {row["tag"].removeprefix("semantic_").removesuffix(f"_s{args.seed}"): row["scores"]["val"] for row in rows}
 for name, value in vals.items():
     print(f"SEMANTIC_V50K seed={args.seed} arm={name} val={value:.5f}", flush=True)
 print(f"SEMANTIC_V50K seed={args.seed} late_minus_static={vals['semantic_late_online']-vals['semantic_static']:.5f}", flush=True)
