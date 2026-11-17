@@ -87,7 +87,7 @@ patches = [
         '                pooled=torch.zeros(64,h.shape[1],device=h.device).index_add_(0,m.ah[tg],h)\n'
         '                sizes=torch.bincount(m.ah,minlength=64).clamp_min(1)\n'
         '                m.head.grad.index_add_(0,tg,a.smooth_eps*h/n)\n'
-        '                m.head.grad.sub_(a.smooth_eps*pooled[m.ah]/sizes[:,None]/n)\n'
+        '                m.head.grad.sub_(a.smooth_eps*pooled[m.ah]/sizes[m.ah,None]/n)\n'
         '        for o in opts: o.step()',
     ),
 ]
