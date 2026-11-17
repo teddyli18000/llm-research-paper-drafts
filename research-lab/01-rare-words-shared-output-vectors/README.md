@@ -3,16 +3,17 @@
 Owner: independent follow-up on the original `01-rare-words-shared-output-vectors` draft.
 The original paper and original code remain unchanged.
 
-## Current research progress (2026-11-16)
+## Current research progress — November 2026
 
-See [WORKLOG.md](WORKLOG.md) for a complete run ID/evidence index and [research review](../../research-review/01-rare-words-shared-output-vectors/).
+- Replicated dynamic group-sharing gains on 3 seeds, four distinct FineWeb training slices, V6k/width32, V16k/width128, and near-full GPT-2 V50k/width64.
+- V50k 800-step paired seed gains: **+0.0306/+0.0293 CE**. Critically, 10–99 target-exposure tokens account for ~97% of the total gain while unseen and 1–9-count tokens regress. See [V50k analysis](../../research-review/01-rare-words-shared-output-vectors/FULL_VOCAB_FREQUENCY_DECOMPOSITION.md).
+- 1600-step V6k: plain mean CE 4.73975, online dynamic 4.71960, fixed same-data context 4.72550, context-initialized late online 4.71840. Adaptive regrouping becomes more useful with training horizon.
+- On V6k, **official Ember head optimizer + dynamic groups** outperforms standalone Ember at matched settings: beta2=.95 4.99943→4.97780; beta2=.999 4.99390→4.97960, 3 paired seeds each. Original Coupled Adam was worse on this small-model grid.
+- Tied input/output tests: dynamic grouping still helps vs plain, but fixed contextual semantic groups have the best mean CE at both 400 and 1600 steps.
+- [New controlled transfer](https://github.com/teddyli18000/llm-research-paper-drafts/actions/runs/44002552718) is testing fresh seeds 41/73/109 at V16k/V50k against official Ember. [V50k semantic controls](https://github.com/teddyli18000/llm-research-paper-drafts/actions/runs/44003042366) will test whether fixed contextual priors outperform online grouping.
+- Read [modern optimizer and tied results](../../research-review/01-rare-words-shared-output-vectors/MODERN_OPTIMIZER_AND_TIED_RESULTS.md), [Ember v4 source audit](../../research-review/01-rare-words-shared-output-vectors/EMBER_V4_CODE_EQUIVALENCE.md), and [WORKLOG](WORKLOG.md) for full evidence.
 
-- Confirmed the original dynamic KMeans group-sharing effect on **three model seeds**, **four separate FineWeb train slices**, width32/V6000, and independently width128/V16000. The gain is real in these controlled settings.
-- Learned group membership is key: random group refresh and function-preserving recenter alone have no benefit. Retaining a private-word optimizer history matters; resetting cluster Adam history itself does not negate the effect.
-- A stronger **fixed semantic grouping** extracted from the training data beats the naive online KMeans method on the small runs. Late online adaptation of that semantic prior can add an improvement. With external GPT-2 pretrained token vectors, static semantic groups are stronger still.
-- Derived an exact class-gradient coupling identity for `R=U+AC` and confirmed a direct no-extra-parameter dynamic gradient-kernel mechanism, plus a centered normalized group projector (see [PROJECTOR_LEMMA.md](../../research-review/01-rare-words-shared-output-vectors/PROJECTOR_LEMMA.md)).
-- Current questions: long-horizon persistence, which target-frequency buckets benefit, sensitivity to different training slices, and whether bounded-geometry group-gradient mixing scales.
-- Ongoing Actions results are recorded by run ID in WORKLOG; the original paper/code remain unchanged.
+**Paper thesis:** training-time, exactly function-preserving, adaptively changing inter-token group-gradient coupling may complement modern head optimizers. Strong static semantic groups and realistic model-scale training remain key tests.
 
 ## Research hypothesis
 
@@ -42,4 +43,4 @@ The public GPT-2 FineWeb10B shards use the same data format as the original sour
 - [LENS, ACL 2025](https://aclanthology.org/2025.acl-long.930/): cluster pretrained LM head output vectors.
 - [Why Adaptive Optimizers Underestimate Rare Tokens, Sep 2026](https://arxiv.org/abs/2609.37535): predicts rare output-row Adam bias; identifies SGD/AMSGrad differences. This is especially relevant to the original author's optimizer interpretation.
 
-Next decision: finish 1600-step and target-frequency tests, then decide on full-vocabulary and stronger modern optimizer benchmarks.
+Next decision: evaluate the precommitted V16k/V50k modern optimizer and semantic controls, then plan realistic LM scaling.
