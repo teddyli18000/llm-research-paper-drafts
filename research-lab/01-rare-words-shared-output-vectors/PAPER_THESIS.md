@@ -2,6 +2,8 @@
 
 Date: 2026-11-16. Internal research planning only. Main dataset and evidence: [WORKLOG](WORKLOG.md), [expanded literature](../../research-review/01-rare-words-shared-output-vectors/PRIOR_ART_EXPANDED.md).
 
+**Originality correction after rereading the complete upstream paper:** The core `R=U+AC` algorithm, KMeans regrouping while retaining logits, gradient pooling of a group, rare-target exposure threshold, and basic length/width/tie/batch effects are **already in the original author’s [01/PAPER.md](../../01-rare-words-shared-output-vectors/PAPER.md)**. They cannot be presented as our newly invented method or observations. Our independent extension must credit that work and establish a genuinely new mechanism/optimizer variant or substantive comparative/scaling findings. Full [originality ledger](../../research-review/01-rare-words-shared-output-vectors/ORIGINAL_IDEA_VS_NEW_CONTRIBUTION.md).
+
 ## Research question
 
 Can a language model **learn which output token rows should share their training signal** and adapt this sharing online, without sacrificing the exact standard softmax decoder or increasing inference complexity? How does this compare to using a **fixed but informative semantic partition** derived from the same training corpus?
@@ -55,11 +57,12 @@ The **research hypothesis**, not yet protected by broad modern-scale evidence, i
 
 **Gate E: causal mechanism**. Show whether gains arise from selected group-gradient communication, optimizer moment-history policy, or effective hierarchical class learning, using direct-gradient and parameterization ablations.
 
-## Publication pathway
+## Publication pathway — independent extension, not rebranding
 
-The paper should stand as a study of **adaptive group-gradient geometry for rare output tokens**, not a renamed KMeans regularizer. The contributions would be:
-1. A mathematically transparent invariant-output dynamic grouping algorithm (and its optimizer interpretation).
-2. A causal, matched-seed analysis of why the specific training signal reaches low-frequency tokens and under what frequency regimes it fails.
-3. A demonstrated performance/compute advantage against the strongest modern optimizers and static semantic priors at a meaningful scale.
+The base clustering method belongs to the original author. The independent paper's strongest plausible direction is **what directional inter-token group-gradient transfer adds to modern token-table optimizers** and **how to prevent low-exposure negative transfer**. Candidate own contributions are:
 
-Do not pitch the current tiny-model improvements as a completed top-tier result. A useful final paper can be a methods paper if the above comparative advantage holds, or a rigorous negative/algorithmic-mechanism analysis if the gain disappears at scale. The priority is **measuring the regime**, not defending a predetermined success story.
+1. A **different mathematically specified operator**, such as the bounded projector `(I+αA(AᵀA)⁻¹Aᵀ)G` before Ember, without extra learned centroid parameters, or a reliability-aware gradient-transfer rule. This must be evaluated against both the original shared-centroid model and full-strength head optimizers.
+2. Fresh multi-seed, exact-implementation comparisons with [Ember v4](https://arxiv.org/html/2607.01455v4), strong fixed semantic groups, and the original algorithm at V16k/V50k; preserve frequency-resolved negative effects and realistic compute overhead.
+3. A large-parameter LM and realistically batched training result establishing whether the method survives beyond toy training. The original paper itself already predicted/explained the 10+ exposure threshold, so reproducing it is validation rather than a new mechanism claim.
+
+The V6k [modern-optimizer results](../../research-review/01-rare-words-shared-output-vectors/MODERN_OPTIMIZER_AND_TIED_RESULTS.md) indicate complementarity, while the [new class-projected Ember pilot](../../research-review/01-rare-words-shared-output-vectors/PROJECTED_EMBER_PROTOCOL.md) and [precommitted larger-vocabulary test](../../research-review/01-rare-words-shared-output-vectors/EMBER_SCALE_TRANSFER_PROTOCOL.md) test whether anything genuinely distinctive remains. Do not promise a top-conference method on the basis of standalone replications.
