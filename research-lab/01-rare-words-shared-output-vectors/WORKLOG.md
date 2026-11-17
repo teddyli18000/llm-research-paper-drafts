@@ -229,3 +229,10 @@ Run an exact residual decomposition with fresh seeds: compare the full projector
 - The batch32 gap is concentrated in zero/low-exposure buckets; batch128 is near-tied. Output update norms do not explain the gap monotonically.
 - This establishes an adaptive-coordinate effect candidate, not a general advantage. A matched head-LR sweep (0.025/0.05/0.10) is now the next falsification step. Full result: [NORMALIZED_CENTROID_ADAPTIVE_RESULTS.md](../../research-review/01-rare-words-shared-output-vectors/NORMALIZED_CENTROID_ADAPTIVE_RESULTS.md).
 
+
+
+## Fifteenth continuation — graph-diffusion proper-score baseline registered
+
+- Hilfiker et al. [Hil26] exact clique-graph heat-kernel limit has been verified from full text: for unequal clique sizes \(n_g\), \(H_{\tau,g}=P_g+e^{-\tau n_g/2}(I-P_g)\), and \(H_\tau\to P\). The limit score is proper but not strictly proper; finite tau is strictly proper. Resistance score uses \(L^\dagger_g=(1/n_g)(I-P_g)\).
+- Registered a head-only scalar-loss collision: P-limit score \(r^\top P r\), finite diffusion score at tau .02, and resistance score, each added to ordinary CE. Their logit gradients include \(J_{\rm softmax}\), unlike the direct projector. Protocol: [GRAPH_DIFFUSION_SCORE_PROTOCOL.md](../../research-review/01-rare-words-shared-output-vectors/GRAPH_DIFFUSION_SCORE_PROTOCOL.md).
+- Added an analytic test verifying score formulas and gradients for unequal clique sizes. Trial/workflow are registered; execution will begin after the current centered-residual and LR-sweep matrices.
