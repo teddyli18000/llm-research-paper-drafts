@@ -156,7 +156,7 @@ Run an exact residual decomposition with fresh seeds: compare the full projector
 
 - **Residual decomposition #44046155032 completed 6/6, 48 training runs.** The analytic identity test and per-step matrix-projection equivalence passed; maximum observed discrepancy was below 1.6e-8. Full results: [RESIDUAL_DECOMPOSITION_RESULTS.md](../../research-review/01-rare-words-shared-output-vectors/RESIDUAL_DECOMPOSITION_RESULTS.md).
 - Fixed-context full projector mean CE: 4.96840 (batch32), 5.06013 (batch128). It beats plain Ember by 0.03477/0.02020 and upstream centroid+Ember by 0.01100/0.01483, with all three paired seeds agreeing in both regimes.
-- Prediction-only and target-only corrections fail badly: +0.65243/+0.55917 CE and +1.08763/+0.95370 versus the full projector. Context-group label smoothing at epsilon 2/3 is also worse by +0.54233/+0.52237. The useful object is the difference Pp hᵀ − Py hᵀ; neither component is useful alone. Their per-step mean cosine is 0.96948/0.95703, and their norms are similar. This points to a cancellation/residual mechanism, not one-sided prediction or target smoothing.
+- In the uncentered residual ablation, prediction-only and target-only corrections are much worse than the full projector, while context-group label smoothing is also worse. However, the one-sided terms contain opposite vocabulary-uniform modes that the full difference cancels. The raw one-sided outcomes are therefore confounded and do not establish that both centered terms are necessary. A centered follow-up with uniform-only controls is running as Actions #44052591527; see CENTERED_RESIDUAL_PROTOCOL.md.
 - Dynamic K-means is worse than fixed context by +0.00523/+0.02153. Context→dynamic at absolute step 200 improves batch32 by 0.00500 on all three seeds; batch128 has only 100 steps and therefore remains fixed-context, matching it exactly.
 - Frequency buckets show that full context projection improves most exposure bands, not only zero-exposure rows. Zero-exposure targets are just 0.01% of validation mass. Prediction-only/target-only have large zero-exposure improvements but degrade the broader distribution, especially the unknown bucket.
 - **New deep literature search completed:** /01-output-embeddings/Exact prediction-side class residual projector prior art. Its abstract/metadata pass found no retrieved paper with the exact flat untied head update (I+αP)G, but this is not yet a proof of absence. Full-text checks:
@@ -197,4 +197,14 @@ Run an exact residual decomposition with fresh seeds: compare the full projector
 - The preregistered rule says thresholds within 0.002 CE should prefer the later switch. All three are within 0.00040, so **step250 is selected**, even though step200 has the smallest raw mean. This preserves context groups longer.
 - Step250's bucket profile improves zero-exposure and 1–31 exposure, 3k+ and unknown; the 32–999 bands regress slightly. The schedule gain is small but seed-consistent and is not uniform across frequency.
 - Batch128 remains fixed context because its 100-step horizon never reaches step250.
+
+
+
+## Twelfth continuation — center the one-sided residual controls
+
+- Re-auditing CLASS_RESIDUAL_COMPONENT_IDENTIFICATION.md exposed a confound in the prior one-sided residual ablation. For each batch, both Pp and Py sum across vocabulary rows to the same mean hidden vector. Their raw one-sided updates therefore include +U or -U, where U=(1/V)1 hbarᵀ. The full difference cancels U.
+- U shifts all current logits by the same scalar per hidden state, so it is softmax-invariant for the current forward pass; under Ember it can still change parameter values and adaptive moment state. This can explain part of the raw one-sided degradation.
+- The full-projector results and full-projector frequency buckets remain valid. The one-sided causal interpretation is withdrawn pending centered controls.
+- Added CENTERED_RESIDUAL_PROTOCOL.md and centered_residual_decomposition_trial.py, plus an analytic test that verifies both centered corrections sum to zero, their difference equals PG, and the uniform mode leaves current softmax probabilities unchanged.
+- **Centered residual run #44052591527 is queued/running:** 3 fresh seeds × 2 batch sizes × 8 arms, including centered/uncentered prediction-only, centered/uncentered target-only, full projector, and uniform-only plus/minus controls.
 
