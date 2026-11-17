@@ -27,7 +27,7 @@ hard = torch.autograd.grad(ce, w, retain_graph=True)[0]
 pooled_targets = torch.zeros(K, d).index_add_(0, groups[t], h)
 analytic = hard.clone()
 analytic.index_add_(0, t, .5*h/N)
-analytic.sub_(.5 * pooled_targets[groups] / counts[:,None] / N)
+analytic.sub_(.5 * pooled_targets[groups] / counts[groups,None] / N)
 torch.testing.assert_close(analytic, actual, rtol=2e-5, atol=2e-6)
 print("TARGET_ONLY_LABEL_SMOOTHING_HEAD_GRADIENT PASS")
 
