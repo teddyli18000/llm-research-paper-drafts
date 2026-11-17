@@ -59,3 +59,7 @@ The candidate contribution is therefore not generic gradient tampering, class sh
 - A higher rho without better held-out CE does not establish useful transfer.
 - Cross-microbatch agreement filtering is established prior art (e.g. Gradient Agreement Filtering, 2024). The candidate contribution is the group-subspace reliability estimator and its use to select/scale token-row sharing; this is a narrow extension that must beat the energy gate and fixed groups.
 - No hyperparameter selection uses the held-out validation set. A positive result requires a new independent test shard and a separate scale replication.
+
+## Execution
+
+The launcher is registered on the repository's default branch and runs against research/01-modern-optimizer-baselines. Changes to this protocol or the experiment scripts on that branch start the six matched seed/batch jobs. Raw logs and JSONL results are archived as Actions artifacts.
