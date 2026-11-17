@@ -218,3 +218,14 @@ Run an exact residual decomposition with fresh seeds: compare the full projector
 - **Learning Concepts, Not Tokens [Zha26u]** uses contextual synonym-set loss \(-\log\sum_{j\in C}p_j\), with logit gradient \(p_j-\mathbf1[j\in C]p_j/P_C\). The existing concept-class CE collision already tests the single-membership set-likelihood form on our context groups, though not the papers' contextual synonym construction or multi-membership target.
 - These findings and exact equations are in [2026_LM_HEAD_OPTIMIZER_PRIOR_ART.md](../../research-review/01-rare-words-shared-output-vectors/2026_LM_HEAD_OPTIMIZER_PRIOR_ART.md).
 
+
+
+## Fourteenth continuation — normalized-centroid adaptive comparison completed
+
+- **Actions #44051580714 completed 6/6, 36 runs.** The 25-step nonlinear SGD equivalence test passed to <2.3e-15 maximum error.
+- Direct projector beats plain Ember and plain Adam at both batches on all seeds. The exact normalized-centroid parameterization also beats both plain baselines.
+- Direct versus scaled-centroid under Ember: batch32 mean paired CE −0.01660, all three seeds; batch128 −0.00127, seed-inconsistent.
+- Direct versus scaled-centroid under Adam: batch32 −0.02477, all three seeds; batch128 −0.00197, seed-inconsistent.
+- The batch32 gap is concentrated in zero/low-exposure buckets; batch128 is near-tied. Output update norms do not explain the gap monotonically.
+- This establishes an adaptive-coordinate effect candidate, not a general advantage. A matched head-LR sweep (0.025/0.05/0.10) is now the next falsification step. Full result: [NORMALIZED_CENTROID_ADAPTIVE_RESULTS.md](../../research-review/01-rare-words-shared-output-vectors/NORMALIZED_CENTROID_ADAPTIVE_RESULTS.md).
+
