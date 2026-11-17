@@ -101,3 +101,5 @@ The experiment tests the specific role of the prediction-side class residual. It
 ## Execution
 
 The workflow is registered on the repository default branch and runs against research/01-modern-optimizer-baselines. The protocol and analytic identity test are committed before the fresh-seed matrix. Raw logs and frequency-bucket JSONL files are archived as Actions artifacts.
+
+The registered Actions launcher uses the existing research workflow path `.github/workflows/research-01-stable-capture.yml` and runs the matrix on this branch.
