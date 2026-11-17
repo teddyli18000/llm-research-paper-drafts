@@ -175,3 +175,16 @@ Run an exact residual decomposition with fresh seeds: compare the full projector
 2. Add output-only Adam epsilon 1e-4, projected RowNorm, and MuonIO as head-optimizer baselines, matching token budget and validation buckets.
 3. Continue the prior-art pass on the unavailable cluster-soft-target and metric-augmentation papers; then search specifically for blockwise class-residual preconditioning and gradient-sharing formulations beyond the current retrieved set.
 4. Only after those comparisons, make a final novelty and paper-viability decision.
+
+
+## Tenth continuation — exact normalized-centroid equivalence
+
+- A stronger algebraic collision has been derived and committed in [2026_LM_HEAD_OPTIMIZER_PRIOR_ART.md](../../research-review/01-rare-words-shared-output-vectors/2026_LM_HEAD_OPTIMIZER_PRIOR_ART.md):
+  - Let \(D=A^\top A\), \(P=AD^{-1}A^\top\).
+  - The parameterization \(W=U+\sqrt{\alpha}AD^{-1/2}C\) has gradients \(\nabla_U L=G\) and \(\nabla_C L=\sqrt{\alpha}D^{-1/2}A^\top G\).
+  - Same-LR SGD on U and C induces exactly \(\Delta W=-\eta(I+\alpha P)G\).
+  - Therefore the normalized projector is exactly a normalized shared-centroid reparameterization for fixed groups under SGD. The unnormalized \(U+AC\) baseline is not the exact match.
+- Added normalized_centroid_equivalence_test.py, a 25-step nonlinear softmax test that verifies the two output-matrix trajectories agree to <2e-12 in float64.
+- Preregistered a direct-projector versus normalized-centroid comparison under Ember and Adam: [NORMALIZED_CENTROID_ADAPTIVE_PROTOCOL.md](../../research-review/01-rare-words-shared-output-vectors/NORMALIZED_CENTROID_ADAPTIVE_PROTOCOL.md). Trial runner is normalized_centroid_adaptive_trial.py; workflow registration remains to be added after the current switch-schedule run finishes.
+- This changes the novelty boundary: the fixed-group SGD update geometry itself is not new. The empirical question is whether a direct flat-head update has a useful practical/adaptive-optimizer advantage over the exact scaled-centroid parameterization, and whether evolving semantic groups add value.
+
