@@ -92,7 +92,7 @@ All projector arms apply \(\widetilde G=G+2PG\) to the head update. The only dif
 ## Prior-art boundary
 
 - Hu et al. (2026), *Hidden Failure Modes of Gradient Modification under Adam, and Adaptive Decoupled Moment Routing as a Repair*, directly establishes the general idea of sending modified gradients to the first moment and raw gradients to the second moment. It does not test an LM-head group projector or factored Ember.
-- Shah (2026), *Ember: A Kilobyte-State Optimizer for Token Interfaces*, supplies the official factored second-moment optimizer used here. The implementation has no first moment for token tables.
+- Shah (2026), *Token Geometry* (arXiv:2607.01455; optimizer Ember), supplies the official factored second-moment optimizer used here. The implementation has no first moment for token tables.
 - Han et al. (2026), *A Deafening Silence*, establishes output-only Adam epsilon adjustment as a strong under-exposed-token/continual-pretraining baseline. It does not use group-gradient sharing.
 - Somasundaram et al. (2026), *Toward a First-Principles Update Geometry for the Language-Model Head*, and Lau & Su (2026), *Symmetry-Compatible Principle for Optimizer Design*, use global vocabulary centering and row-normalized/spectral LM-head updates. Neither uses within-token-group gradient averaging.
 - Tree Loss (Wang & Izbicki, AISTATS 2022) establishes class-structured parameterization; the fixed-projector SGD reparameterization collision and near-tie under Ember/Adam are documented separately.
@@ -116,3 +116,8 @@ The workflow is registered on the repository default branch and runs against res
 The prior fresh-seed matrix (Actions #44037476138) did not meet its preregistered decision rule: mean CE for the energy gate was 4.96290 at batch 32 and 5.06120 at batch 128; eta selection was 4.96533 and 5.06033, respectively. Eta therefore loses to the energy gate at batch 32 and only differs by 0.00087 at batch 128. The next study changes the optimizer's moment pathway rather than continuing to tune the reliability score.
 
 The registered Actions launcher is the existing research workflow path `.github/workflows/research-01-stable-capture.yml`, now dedicated to this moment-routing matrix.
+
+
+## Result
+
+The preregistered matrix completed in Actions #44043530225. Raw-stat routing failed the decision rule; see MOMENT_ROUTING_RESULTS.md for the paired CE, update-norm and frequency-bucket analysis.
