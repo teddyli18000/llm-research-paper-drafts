@@ -4,7 +4,6 @@ on:
     branches:
       - "research/01-modern-optimizer-baselines"
     paths:
-      - ".github/workflows/research-01-context-switch-schedule.yml"
       - "research-lab/01-rare-words-shared-output-vectors/context_switch_schedule_trial.py"
 permissions:
   contents: read
