@@ -324,9 +324,10 @@ These results support a **narrow normalized class-mean preconditioner hypothesis
 
 1. Finish the preregistered direct-projector versus exact normalized-centroid parameterization comparison under Ember and Adam. The fixed-group SGD equivalence is already exact; the remaining question is adaptive-optimizer behavior.
 2. Retain context groups through absolute step 250 before switching to online output-row K-means for the batch32 schedule candidate. Batch128 remains fixed context at the tested 100-step horizon.
-3. Add output-only Adam epsilon 1e-4 from Han et al., a faithful projected RowNorm baseline from Somasundaram et al., and MuonIO at V≈50k, with per-exposure buckets.
-4. Obtain full text for CluOReg [Mei23] and the exact metric-augmentation/class-relationship neighbors that remain unresolved; the Inan & Khosravi paper has now been read in full and is a target-similarity loss, not a projector.
-5. Test the surviving mechanism on an untouched shard and at a substantially larger model before making a general LM-pretraining claim.
+3. Complete the graph-diffusion proper-score collision: compare the P-limit score, finite heat-kernel score, and resistance complement against direct logit-space projection.
+4. Add output-only Adam epsilon 1e-4 from Han et al., a faithful projected RowNorm baseline from Somasundaram et al., and MuonIO at V≈50k, with per-exposure buckets.
+5. Obtain full text for CluOReg [Mei23] and the exact metric-augmentation/class-relationship neighbors that remain unresolved; the Inan & Khosravi paper has now been read in full and is a target-similarity loss, not a projector.
+6. Test the surviving mechanism on an untouched shard and at a substantially larger model before making a general LM-pretraining claim.
 
 ## Bibliographic links
 
