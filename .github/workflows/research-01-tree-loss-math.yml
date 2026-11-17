@@ -1,0 +1,25 @@
+name: Research 01 — normalized group projector reparameterization identity
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-tree-loss-math.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/tree_loss_equivalence_test.py"
+      - "research-review/01-rare-words-shared-output-vectors/TREE_LOSS_PRECONDITIONER_COLLISION.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact_equivalence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU torch
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prove by autograd and matrix identities
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/tree_loss_equivalence_test.py
