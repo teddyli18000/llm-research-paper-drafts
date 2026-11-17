@@ -7,7 +7,6 @@ on:
       - "research-lab/01-rare-words-shared-output-vectors/microbatch_reliability_trial.py"
       - "research-lab/01-rare-words-shared-output-vectors/microbatch_reliability_test.py"
       - "research-review/01-rare-words-shared-output-vectors/MICROBATCH_RELIABILITY_PROTOCOL.md"
-  workflow_dispatch:
 permissions:
   contents: read
 jobs:
