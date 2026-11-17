@@ -52,7 +52,7 @@ Given a new assignment matrix `A'`, choose any `C'` and set `U'=R-A'C'`. Then `U
 
 Class-based output logits, morphologically shared vectors, and learned word clusters have substantial prior art: Botha & Blunsom 2014, LightRNN 2016, GroupReduce 2018, Syntactic Smoothing 2024. [SGG at ACL 2025](https://aclanthology.org/2025.acl-long.164/) also learns dynamic clusters of **gradient statistics** for group-specific learning-rate scaling, but does **not** introduce the same output-row tied residual and class-level gradient sharing.
 
-The candidate contribution is **time-varying class-gradient preconditioning of an unchanged flat softmax**, with frequency-adaptive rare-token benefits. This is a tighter, more testable claim than “similar words share output vectors”.
+The original online shared-centroid mechanism is already present in the upstream author's paper and is not our discovery. The normalized projector P=AD⁻¹Aᵀ is also not a new fixed-group SGD geometry: it is exactly induced by W=U+√α A D⁻¹/² C when U and C use the same SGD learning rate. A graph-diffusion proper score on disjoint class cliques also converges to P in probability coordinates, though its logit gradient retains the softmax Jacobian. The remaining research question is narrower: whether a direct flat-head implementation of this normalized coupling interacts with Ember/Adam differently from its exact shared-centroid parameterization, and whether that practical difference yields robust rare-token gains at realistic scale.
 
 Two crucial competing explanations:
 - Simple group-level optimization conditioning instead of semantic gradient sharing might generate much of the benefit. Compare matched artificial groups, one-shot groups, plus direct gradient-kernel updates.
@@ -78,8 +78,13 @@ This pilot used a reconstructed `counts.npy`, not the unavailable original corpu
 
 ## 7. Remaining research work before an originality verdict
 
-- Seed-matched 400-step confirmation + effect size and uncertainty.
-- Matched strong semantic static groups, not only frequency/random.
-- Decompose improvements by word frequency, group purity, and optimizer update covariance.
-- Compare an explicit gradient-kernel optimizer without shared parameters to test whether parameterization itself is needed.
-- Realistic batch/longer training + at least one modern 100M+ model if the low-cost mechanism succeeds.
+- Complete centered prediction/target residual controls; the first uncentered one-sided ablation contains a vocabulary-uniform mode and is not a clean causal decomposition.
+- Complete the matched head-LR sweep between direct projection and exact normalized-centroid parameterization under Ember and Adam.
+- Compare against the graph-diffusion proper-score limit, output-only Adam epsilon, projected RowNorm, and MuonIO.
+- Preserve the selected batch32 schedule candidate: context groups through step250, then online K-means; batch128 remains fixed context at the tested 100-step horizon.
+- Test on an untouched shard and a substantially larger model before any general LM-pretraining claim.
+
+
+## November 17 update
+
+The fixed-group SGD equivalence has now been verified with a 25-step nonlinear softmax test (max output-matrix error 2.22e-15). Direct projector vs exact normalized-centroid under adaptive optimizers shows a batch32 advantage (−0.0166 CE under Ember, −0.0248 under Adam) but only a near-tie at batch128. The head-LR sweep is preregistered. The first raw one-sided residual decomposition is confounded by the uniform softmax mode; centered controls are running. See WORKLOG.md and the corresponding result/protocol files for exact run IDs.
