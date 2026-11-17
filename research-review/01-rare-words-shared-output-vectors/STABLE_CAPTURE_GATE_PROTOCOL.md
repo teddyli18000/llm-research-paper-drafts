@@ -67,3 +67,8 @@ The candidate contribution is the stable projected-gradient capture score for ch
 ## Decision rule
 
 Eta must beat the corrected energy gate and both rho/cosine controls on matched seeds at both batch sizes, with improvements visible in held-out frequency buckets. If it does not, stop the global partition-selection line and move to a different mechanism rather than tuning this score on the same validation set.
+
+
+## Execution
+
+The launcher is registered on the default branch and runs against research/01-modern-optimizer-baselines. This protocol and the estimator tests were committed before the fresh-seed run. Raw logs and JSONL frequency-bucket results are archived as Actions artifacts.
