@@ -4,10 +4,8 @@ on:
     branches:
       - "research/01-modern-optimizer-baselines"
     paths:
-      - ".github/workflows/research-01-normalized-centroid.yml"
       - "research-lab/01-rare-words-shared-output-vectors/normalized_centroid_adaptive_trial.py"
       - "research-lab/01-rare-words-shared-output-vectors/normalized_centroid_equivalence_test.py"
-      - "research-review/01-rare-words-shared-output-vectors/NORMALIZED_CENTROID_ADAPTIVE_PROTOCOL.md"
 permissions:
   contents: read
 jobs:
