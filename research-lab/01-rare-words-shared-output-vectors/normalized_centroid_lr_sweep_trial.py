@@ -1,4 +1,4 @@
-"""Matched head-learning-rate sweep for direct and normalized-centroid updates."""
+"""Matched head-learning-rate sweep for direct and normalized-centroid updates on fresh seeds."""
 import argparse
 import json
 import math
