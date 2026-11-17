@@ -150,3 +150,28 @@ All notes below concern the **independent new single-head projector** `G'=(I+2A(
 ## Next research step
 
 Run an exact residual decomposition with fresh seeds: compare the full projector G + αP(p−y) against prediction-side-only G + αPp and target-side-only G − αPy, using the same fixed context and context-initialized online groups. This directly tests the distinctive Pp term that target smoothing lacks and can explain the zero-exposure bucket behavior. After that, test an absolute-step context→dynamic switch if the batch-regime pattern persists. Add projected RowNorm/MuonIO and output-only epsilon baselines before a final novelty verdict.
+
+
+## Ninth continuation — exact residual decomposition and expanded prior-art search
+
+- **Residual decomposition #44046155032 completed 6/6, 48 training runs.** The analytic identity test and per-step matrix-projection equivalence passed; maximum observed discrepancy was below 1.6e-8. Full results: [RESIDUAL_DECOMPOSITION_RESULTS.md](../../research-review/01-rare-words-shared-output-vectors/RESIDUAL_DECOMPOSITION_RESULTS.md).
+- Fixed-context full projector mean CE: 4.96840 (batch32), 5.06013 (batch128). It beats plain Ember by 0.03477/0.02020 and upstream centroid+Ember by 0.01100/0.01483, with all three paired seeds agreeing in both regimes.
+- Prediction-only and target-only corrections fail badly: +0.65243/+0.55917 CE and +1.08763/+0.95370 versus the full projector. Context-group label smoothing at epsilon 2/3 is also worse by +0.54233/+0.52237. The useful object is the difference Pp hᵀ − Py hᵀ; neither component is useful alone. Their per-step mean cosine is 0.96948/0.95703, and their norms are similar. This points to a cancellation/residual mechanism, not one-sided prediction or target smoothing.
+- Dynamic K-means is worse than fixed context by +0.00523/+0.02153. Context→dynamic at absolute step 200 improves batch32 by 0.00500 on all three seeds; batch128 has only 100 steps and therefore remains fixed-context, matching it exactly.
+- Frequency buckets show that full context projection improves most exposure bands, not only zero-exposure rows. Zero-exposure targets are just 0.01% of validation mass. Prediction-only/target-only have large zero-exposure improvements but degrade the broader distribution, especially the unknown bucket.
+- **New deep literature search completed:** /01-output-embeddings/Exact prediction-side class residual projector prior art. Its abstract/metadata pass found no retrieved paper with the exact flat untied head update (I+αP)G, but this is not yet a proof of absence. Full-text checks:
+  - Tree Loss [Wan22]: path-incidence reparameterization W=SV induces SSᵀG, a path-overlap Gram preconditioner. It is not generally the normalized orthogonal projector A(AᵀA)⁻¹AᵀG; equivalence requires a special matrix identity. The paper does not claim the proposed optimizer-side transform. Its printed U-tree difference sign in Eq. 2 conflicts with the path-sum identity in Eq. 3; document this equation caveat.
+  - Syntactic Smoothing [Mar24]: target-only redistribution. Its implied gradient is T p − t; there is no prediction-side Pp. Its printed target normalization is ambiguous: Eq. 3 normalizes over the wrong index for a per-target distribution, and row-wise temperature softmax does not resolve the column-sum issue.
+  - Softmax Gradient Tampering [Das21]: nonlinear normalized-power transform p'_i=p_i^α/Σ_j p_j^α, then p'−y; not a fixed projector, and target is unchanged.
+  - AGG [Yu21b]: dynamically frequency-gates negative-class contributions to rare output rows; no gradient transfer between rows or class-mean projection. WikiText-103 GPT-2-medium: rare-token PPL 438.67→75.39, total PPL 15.51 unchanged; this is a strong rare-token baseline.
+  - Hypernym Class Prediction [Bai22]: mixed vocabulary softmax over hypernym class symbols and unreplaced tokens. Original mapped token rows are excluded from HCP output support; class-target gradients accrue to class rows, not distributed to member token rows. Not the flat-head projector.
+  - Why Adaptive Optimizers Underestimate Rare Tokens [Kar26b]: RMSProp periodic-arrival fixed-point theory for unigram output biases, with empirical small-LM rare-token underprediction. It does not propose group transfer; its theorem is not a contextual output-matrix-row theorem. Relevant baseline controls include SGD, AMSGrad, Coupled Adam.
+  - Full-text PDFs for Cluster-based Soft Targets for Output Regularization [Mei23] and Improved Learning through Augmenting the Loss [Ina16b] were unavailable in this pass; do not claim their exact equations have been ruled out.
+- Deep search and its card: [Undermind search](https://app.undermind.ai/projects/8ce665de-7826-4793-88b5-47888b642743?path=%2F01-output-embeddings%2FExact%20prediction-side%20class%20residual%20projector%20prior%20art).
+
+## Next research step
+
+1. Test the context→dynamic switch point at absolute steps 150, 200, 250, and never-switch on fresh seeds at batch32; keep batch128 fixed-context.
+2. Add output-only Adam epsilon 1e-4, projected RowNorm, and MuonIO as head-optimizer baselines, matching token budget and validation buckets.
+3. Continue the prior-art pass on the unavailable cluster-soft-target and metric-augmentation papers; then search specifically for blockwise class-residual preconditioning and gradient-sharing formulations beyond the current retrieved set.
+4. Only after those comparisons, make a final novelty and paper-viability decision.
