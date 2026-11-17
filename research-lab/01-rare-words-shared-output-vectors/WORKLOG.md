@@ -208,3 +208,13 @@ Run an exact residual decomposition with fresh seeds: compare the full projector
 - Added CENTERED_RESIDUAL_PROTOCOL.md and centered_residual_decomposition_trial.py, plus an analytic test that verifies both centered corrections sum to zero, their difference equals PG, and the uniform mode leaves current softmax probabilities unchanged.
 - **Centered residual run #44052591527 is queued/running:** 3 fresh seeds × 2 batch sizes × 8 arms, including centered/uncentered prediction-only, centered/uncentered target-only, full projector, and uniform-only plus/minus controls.
 
+
+
+## Thirteenth continuation — graph-proper scoring and concept-level LM objectives
+
+- Full-text audit found a closer mathematical neighbor: **Hilfiker et al. 2026, Strictly Proper Scoring Rules for Node Selection Tasks on Graphs [Hil26]**. Its diffusion score has probability gradient \(2H_\tau(p-y)\). For a disjoint union of complete within-class cliques, \(H_\tau=P+e^{-\tau n/2}(I-P)\), so \(H_\tau\to P\) as \(\tau\to\infty\). Thus the class-mean projector already appears as a probability-space graph-diffusion residual operator.
+- The distinction is the softmax chain rule: the graph score's logit gradient is \(2J_{\mathrm{softmax}}P(p-y)\), whereas our optimizer-side transformation adds \(P(p-y)\) directly to the CE logit gradient. This is a strong adjacent prior-art collision, not an exact algorithmic match. Add the P-projected Brier/diffusion score as a scalar-loss baseline.
+- **Conceptizer [Zhe26c]** keeps full token softmax and derives concept probabilities through token-membership weights. Its concept-loss gradient is probability-weighted within each concept; it is not uniform class-mean broadcast.
+- **Learning Concepts, Not Tokens [Zha26u]** uses contextual synonym-set loss \(-\log\sum_{j\in C}p_j\), with logit gradient \(p_j-\mathbf1[j\in C]p_j/P_C\). The existing concept-class CE collision already tests the single-membership set-likelihood form on our context groups, though not the papers' contextual synonym construction or multi-membership target.
+- These findings and exact equations are in [2026_LM_HEAD_OPTIMIZER_PRIOR_ART.md](../../research-review/01-rare-words-shared-output-vectors/2026_LM_HEAD_OPTIMIZER_PRIOR_ART.md).
+
