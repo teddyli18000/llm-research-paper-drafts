@@ -101,7 +101,7 @@ assert all(math.isfinite(r["scores"]["val"]) for r in rows)
 values = {name: r["scores"]["val"] for (name, *_), r in zip(specs, rows)}
 for name, val in values.items():
     print(f"PROJECTOR_SCALE V={args.scale} seed={args.seed} arm={name} "
-          f"CE={val:.5f} sec={rows[[n for n,*_ in specs].index(name)]['time']:.1f}", flush=True)
+          f"CE={val:.5f} sec={rows[[n for n,*_ in specs].index(name)]['train_s']:.1f}", flush=True)
 for name in ("ember_plain", "ember_centroid", "adam_centroid"):
     print(f"PROJECTOR_SCALE_PAIR V={args.scale} seed={args.seed} "
           f"comparison={name} minus_projector={values[name]-values['ember_projector']:+.5f}",
