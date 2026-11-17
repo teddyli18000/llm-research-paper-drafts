@@ -1,0 +1,57 @@
+name: Research 01 — locked external FineWeb shard heldout
+on:
+  push:
+    paths:
+      - ".github/workflows/research-01-external-holdout.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/locked_external_test.py"
+      - "research-review/01-rare-words-shared-output-vectors/LOCKED_FINAL_HELDOUT_5ARM_PROTOCOL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  external_heldout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 165
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [809, 811, 821]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install scientific CPU dependencies and official Ember
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "git+https://github.com/katop1234/ember.git@76f30117b2d948874cd1c965c4f6813fa9de8caa"
+      - name: Prepare training corpus and locked train-only semantic labels
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/context_groups_50258.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Train fixed five methods and evaluate untouched external shard
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/locked_external_test.py --seed ${{ matrix.seed }} | tee locked_external.log
+      - name: Verify five complete original-validation and external-test results
+        run: |
+          python - <<'PY'
+          import json, math
+          from pathlib import Path
+          paths=list(Path("research-lab/01-rare-words-shared-output-vectors").glob("locked_external_seed*.jsonl"))
+          assert len(paths)==1
+          rows=[json.loads(s) for s in paths[0].read_text().splitlines()]
+          assert len(rows)==5 and len(set(r["tag"] for r in rows))==5
+          assert all(math.isfinite(r["scores"]["val"]) and math.isfinite(r["scores"]["test"]) for r in rows)
+          assert all(r["args"]["V"]==50258 and r["args"]["steps"]==800 for r in rows)
+          PY
+      - name: Archive complete independent test and train-only controls
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-external-test-seed${{ matrix.seed }}
+          path: |
+            locked_external.log
+            research-lab/01-rare-words-shared-output-vectors/locked_external_seed*.jsonl
+          if-no-files-found: ignore
