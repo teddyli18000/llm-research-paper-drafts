@@ -6,6 +6,7 @@ on:
     paths:
       - "research-lab/01-rare-words-shared-output-vectors/graph_diffusion_score_trial.py"
       - "research-lab/01-rare-words-shared-output-vectors/graph_diffusion_score_test.py"
+      - ".github/workflows/research-01-graph-diffusion-score.yml"
 permissions:
   contents: read
 jobs:
