@@ -46,3 +46,8 @@ The batch128 schedule remains fixed context: its 100-step horizon never reaches 
 ## Execution
 
 The workflow runs three fresh-seed jobs. Each job executes all four matched arms and archives the per-arm JSONL scores, frequency buckets, and update diagnostics.
+
+
+## Result
+
+The preregistered matrix completed in Actions #44050503629. All three switch thresholds beat fixed context on all three seeds. Their means are within 0.00040 CE, so the preregistered later-threshold rule selects step 250. See CONTEXT_SWITCH_SCHEDULE_RESULTS.md for per-seed scores, exposure buckets, and update diagnostics.
