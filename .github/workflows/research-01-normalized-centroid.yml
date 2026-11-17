@@ -1,0 +1,65 @@
+name: Research 01 — normalized centroid adaptive optimizer comparison
+on:
+  push:
+    branches:
+      - "research/01-modern-optimizer-baselines"
+    paths:
+      - ".github/workflows/research-01-normalized-centroid.yml"
+      - "research-lab/01-rare-words-shared-output-vectors/normalized_centroid_adaptive_trial.py"
+      - "research-lab/01-rare-words-shared-output-vectors/normalized_centroid_equivalence_test.py"
+      - "research-review/01-rare-words-shared-output-vectors/NORMALIZED_CENTROID_ADAPTIVE_PROTOCOL.md"
+permissions:
+  contents: read
+jobs:
+  normalized_centroid:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [601, 607, 613]
+        batch: [32, 128]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU scientific dependencies and pinned Ember
+        run: |
+          python -m pip install numpy huggingface_hub scipy scikit-learn
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "git+https://github.com/katop1234/ember.git@76f30117b2d948874cd1c965c4f6813fa9de8caa"
+      - name: Verify exact normalized-centroid SGD equivalence
+        run: python research-lab/01-rare-words-shared-output-vectors/normalized_centroid_equivalence_test.py
+      - name: Prepare original model, train-only groups and runtime
+        run: |
+          python research-lab/01-rare-words-shared-output-vectors/prepare_data.py
+          python research-lab/01-rare-words-shared-output-vectors/context_groups.py
+          python research-lab/01-rare-words-shared-output-vectors/build_runner.py
+      - name: Run six matched parameterization and optimizer arms
+        run: |
+          python -u research-lab/01-rare-words-shared-output-vectors/normalized_centroid_adaptive_trial.py --seed ${{ matrix.seed }} --batch ${{ matrix.batch }} | tee normalized_centroid.log
+      - name: Verify all arms and token budgets
+        run: |
+          python - <<'PY'
+          import json, math
+          from pathlib import Path
+          ps = list(Path("research-lab/01-rare-words-shared-output-vectors").glob("normalized_centroid_b*_s*.jsonl"))
+          assert len(ps) == 1
+          rows = [json.loads(s) for s in ps[0].read_text().splitlines()]
+          assert len(rows) == 6 and len({r["tag"] for r in rows}) == 6
+          assert all(math.isfinite(r["scores"]["val"]) and r["tokens"] == 819200 for r in rows)
+          assert all(r["head_update_norm_mean"] > 0 for r in rows)
+          assert all(r["projected_to_raw_norm_mean"] is not None for r in rows if r["args"]["param_mode"] == "direct")
+          assert {r["args"]["head_opt"] for r in rows} == {"ember", "adam"}
+          assert {r["args"]["param_mode"] for r in rows} == {"plain", "direct", "scaled"}
+          PY
+      - name: Archive scores, frequency buckets and update diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: normalized-centroid-b${{ matrix.batch }}-seed-${{ matrix.seed }}
+          path: |
+            normalized_centroid.log
+            research-lab/01-rare-words-shared-output-vectors/normalized_centroid_b*_s*.jsonl
+          if-no-files-found: ignore
