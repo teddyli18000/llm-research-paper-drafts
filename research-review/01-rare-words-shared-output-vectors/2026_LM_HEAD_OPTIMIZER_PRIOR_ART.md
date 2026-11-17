@@ -79,6 +79,8 @@ then row-normalizes and re-centers the direction. It reports 190M, 380M and 640M
 
 **Collision boundary:** it is direct prior art for softmax-aware LM-head update geometry and projected head optimization. It does not partition vocabulary rows into token groups or average within-group gradients. Its projector removes only the single global shared-logit-shift direction.
 
+The geometric distinction is exact. For a true softmax head gradient, each feature column sums to zero across vocabulary rows: \(\mathbf1^\top G=0\). Therefore the global-centering projector \(P_{global}=I-\mathbf1\mathbf1^\top/V\) leaves that gradient unchanged: \(P_{global}G=G\). By contrast, \(P_A=AD^{-1}A^\top\) replaces each row by its within-group mean and removes within-group zero-sum variation while preserving each group's total gradient. The two projectors act on different subspaces.
+
 ### Lau & Su (2026): symmetry-compatible LM-head updates
 
 *Symmetry-Compatible Principle for Optimizer Design*, arXiv:2605.18106.
