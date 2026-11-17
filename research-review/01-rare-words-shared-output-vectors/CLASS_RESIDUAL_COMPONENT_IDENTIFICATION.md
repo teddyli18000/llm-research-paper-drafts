@@ -40,3 +40,18 @@ The first one-sided run used raw \(Pp\) and \(-Py\), not the centered terms abov
 
 The full-projector arm remains valid and retains its measured gain. The raw one-sided results are exploratory only. The preregistered centered follow-up compares \(Pp-U\), \(Py-U\), the full difference, and uniform-only plus/minus controls: [CENTERED_RESIDUAL_PROTOCOL.md](CENTERED_RESIDUAL_PROTOCOL.md), Actions #44052591527.
 
+
+
+## Centered follow-up completed
+
+[Actions #44052591527](https://github.com/teddyli18000/llm-research-paper-drafts/actions/runs/44052591527) completed six jobs and 48 arms. After subtracting the uniform component U from both terms:
+
+- Centered prediction-only mean CE: 6.24463 (batch32), 6.26007 (batch128).
+- Centered target-only mean CE: 6.04097 (batch32), 6.08003 (batch128).
+- Full projector mean CE: 4.96977 (batch32), 5.06223 (batch128).
+- Plain Ember: 5.00410 (batch32), 5.08187 (batch128).
+
+Both centered one-sided terms lose on every seed at both batches. The uniform-only controls also degrade CE (+0.096/+0.098 for +U; +0.926/+0.931 for −U). The centered cosine remains high (0.969/0.957), so the useful full correction is the relatively small difference between two highly aligned class-residual terms.
+
+The centered follow-up therefore supports the cancellation mechanism. The initial raw one-sided results remain confounded and should not be used as the primary evidence. Full analysis: [CENTERED_RESIDUAL_RESULTS.md](CENTERED_RESIDUAL_RESULTS.md).
+
